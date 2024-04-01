@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>PiCamera2 Live Stream</title>
+<style>
+    body, html {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+    }
+
+    #container {
+        position: relative;
+        width: 100%;
+        height: 100%;
+    }
+
+    #stream {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+    }
+
+    #button-container {
+        position: absolute;
+        bottom: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex; 
+        justify-content: center; 
+        align-items: center; 
+    }
+
+    .button {
+        width: auto; 
+        height: 60px; 
+        margin: 0 5px;
+        cursor: pointer;
+        border: none; 
+        background: transparent; 
+        padding: 0; 
+    }
+
+    .button img {
+        width: auto; 
+        height: 100%; 
+    }
+</style>
+<script>
+    var zoomImages = ["zoom2x.png", "zoom3x.png", "zoom4x.png", "zoom5x.png"];
+    var zoomIndex = 0;
+    var rotateCount = 0;
+    var rotateCount1 = 0;
+    var zoomCount = 0;
+
+    function zoom() {
+        zoomCount++;
+        if (zoomCount % 5 == 0) {
+            resetView();
+            zoomIndex=0;
+            var zoomButton = document.getElementById("zoom-button");
+            zoomButton.innerHTML = '<img src="zoom.png" alt="Zoom Button">';
+        } else {
+            zoomIndex++;
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", "/zoom", true);
+            xhr.send();
+            var zoomButton = document.getElementById("zoom-button");
+            zoomButton.innerHTML = '<img src="' + zoomImages[zoomIndex-1] + '" alt="Zoom Button">';
+        }
+    }
+
+    function resetView() {
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", "/reset_view", true);
+        xhr.send();
+    }
+
+    function rotate_h() {
+        rotateCount++;
+        var rotateButton = document.getElementById("rotate-button-h");
+        if (rotateCount % 2 == 0) {
+            rotateButton.innerHTML = '<img src="horizontal_flip.png" alt="Horizontal Flip Button" style="width: 100%;">';
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", "/rotate_even_h", true);
+            xhr.send();
+        } else {
+            rotateButton.innerHTML = '<img src="unflip.png" alt="Unflip Button" style="width: 100%;">';
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", "/rotate_odd_h", true);
+            xhr.send();
+        }
+    }
+
+    function rotate_v() {
+        rotateCount1++;
+        var rotateButton = document.getElementById("rotate-button-v");
+        if (rotateCount1 % 2 == 0) {
+            rotateButton.innerHTML = '<img src="vertical_flip.png" alt="Vertical Flip Button" style="width: 100%;">';
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", "/rotate_even_v", true);
+            xhr.send();
+        } else {
+            rotateButton.innerHTML = '<img src="unflip.png" alt="Unflip Button" style="width: 100%;">';
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", "/rotate_odd_v", true);
+            xhr.send();
+        }
+    }
+
+    function callPythonFunction() {
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", "/refresh_stuff", true);
+        xhr.send();
+    }
+
+
+window.onload = function() {
+    callPythonFunction();
+};
+
+</script>
+</head>
+<body >
+    <div id="container">
+        <img src="stream.mjpg" width="100%" height="100%"/>
+        <div id="button-container">
+            <button id="zoom-button" class="button" onclick="zoom()">
+                <img src="zoom.png" alt="Zoom Button">
+            </button>
+            <button id="rotate-button-h" class="button" onclick="rotate_h()">
+                <img src="horizontal_flip.png" alt="Horizontal Flip Button">
+            </button>
+            <button id="rotate-button-v" class="button" onclick="rotate_v()">
+                <img src="vertical_flip.png" alt="Vertical Flip Button">
+            </button>
+        </div>
+    </div>
+</body>
+</html>

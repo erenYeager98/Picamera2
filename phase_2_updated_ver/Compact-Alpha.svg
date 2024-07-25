@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg id="svg2" height="115" width="330" version="1.0" xmlns="http://www.w3.org/2000/svg">
+  <defs id="defs90"/>
+  <rect id="AE02" style="fill:#e5d8b2;stroke:#000000" height="18" width="18" y="20.5" x="38"/>
+  <rect id="AE03" style="fill:#e5d8b2;stroke:#000000" height="18" width="18" y="20.5" x="57"/>
+  <rect id="AE01" style="fill:#e5d8b2;stroke:#000000" height="18" width="18" y="20.5" x="19"/>
+  <rect id="AE06" style="fill:#e5d8b2;stroke:#000000" height="18" width="18" y="39.202" x="57.032"/>
+  <rect id="AE07" style="fill:#e5d8b2;stroke:#000000" height="18" width="18" y="57.616" x="19.064"/>
+  <rect id="AE04" style="fill:#e5d8b2;stroke:#000000" height="18" width="18" y="39.202" x="19.032"/>
+  <rect id="AE05" style="fill:#e5d8b2;stroke:#000000" height="18" width="18" y="39.202" x="38.032"/>
+  <rect id="AE09" style="fill:#e5d8b2;stroke:#000000" height="18" width="18" y="57.616" x="57.064"/>
+  <rect id="AE10" style="fill: rgb(229, 216, 178); stroke: rgb(0, 0, 0);" height="17.713" width="18" y="76.03" x="38.085"/>
+  <rect id="AE08" style="fill:#e5d8b2;stroke:#000000" height="18" width="18" y="57.616" x="38.064"/>
+  <rect id="move" style="fill: rgb(229, 216, 178); stroke: rgb(0, 0, 0);" height="11.095" width="11.67" y="23.431" x="77.405"/>
+  <rect id="hide" style="fill:#e5d8b2;stroke:#000000" height="18" width="18" y="75.828" x="56.975"/>
+  <rect id="BKSP" style="fill:#e5d8b2;stroke:#000000" height="18" width="18" y="75.827" x="18.997"/>
+</svg>

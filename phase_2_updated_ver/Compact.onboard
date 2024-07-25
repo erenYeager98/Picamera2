@@ -1,0 +1,83 @@
+<?xml version="1.0" ?>
+
+<!--
+Copyright © 2013 Francesco Fumanti <francesco.fumanti@gmx.net>
+Copyright © 2011-2014 marmuta <marmvta@gmail.com>
+
+This file is part of Onboard.
+
+Onboard is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+
+Onboard is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<keyboard
+    id="Compact"
+    format="3.2"
+    section="system"
+    summary="Medium size desktop keyboard" >
+
+    <include file='key_defs.xml'/>
+
+    <box border="0.5" spacing="1.5" orientation="vertical">
+
+        <!--- word suggestions -->
+        <panel filename='Compact-Alpha.svg' scan_priority='1'>
+            <include file='word_suggestions.xml'/>
+        </panel>
+
+        <box spacing='1.5'>
+            <box spacing='2'>
+                <!--- keyboard, multiple layers -->
+                <panel>
+                    <panel layer="alpha" filename="Compact-Alpha.svg">
+                        <key group="alphanumeric" id="AE02"/>
+                        <key group="alphanumeric" id="AE03"/>
+                        <key group="alphanumeric" id="AD09"/>
+                        <key group="alphanumeric" id="AE01"/>
+                        <key group="alphanumeric" id="AE06"/>
+                        <key group="alphanumeric" id="AE07"/>
+                        <key group="alphanumeric" id="AE04"/>
+                        <key group="alphanumeric" id="AE05"/>
+                        <key group="alphanumeric" id="AE09"/>
+                        <key group="alphanumeric" id="AE11"/>
+                        <key group="alphanumeric" id="AE10"/>
+                        <key group="alphanumeric" id="AE12"/>
+                        <key group="alphanumeric" id="AE08"/>
+                        
+
+                    
+                        <key group="bottomrow" id="BKSP"/>
+                        <key group='bottomrow' id='hide'/>
+                        <key group="bottomrow" id="move"/>
+                    </panel>
+                    
+                    
+                </panel>
+
+            </box>
+
+            <!--- click helpers -->
+            <panel id="click" filename="Compact-Alpha.svg" >
+                <key group='click' id='middleclick'/>
+                <key group='click' id='secondaryclick'/>
+                <key group='click' id='doubleclick'/>
+                <key group='click' id='dragclick'/>
+                <key group='click' id='hoverclick.bottom-row' unlatch_layer="false"/>
+            </panel>
+
+            <!--- side bar -->
+            
+        </box>
+    </box>
+</keyboard>
+

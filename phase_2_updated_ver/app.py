@@ -9,7 +9,7 @@ import serial
 import threading
 import signal
 from PyQt5 import QtCore
-from PyQt5.QtCore import Qt, pyqtSignal,QThread,QProcess,QEvent,QCoreApplication
+from PyQt5.QtCore import Qt, pyqtSignal,QThread,QProcess,QEvent,QCoreApplication, QTimer
 from PyQt5.QtGui import QIntValidator, QPixmap,QFont
 import libcamera
 from picamera2 import Picamera2
@@ -17,7 +17,7 @@ from picamera2.previews.qt import QPicamera2
 from PyQt5.QtWidgets import (QApplication, QCheckBox, QComboBox, QDesktopWidget,
                              QDoubleSpinBox, QFormLayout, QHBoxLayout, QLabel,
                              QLineEdit, QPushButton, QSlider, QSpinBox,
-                             QVBoxLayout, QWidget,QGridLayout,QSizePolicy,QFileDialog,QLayout)
+                             QVBoxLayout, QWidget,QGridLayout,QSizePolicy,QFileDialog,QLayout,QRadioButton)
 
 # Define constants and variables
 SERIAL_PORT = '/dev/ttyS0'
@@ -345,13 +345,32 @@ class logControlSlider(QWidget):
         return self.box.value()
 
 def shutdown_pi():
-        subprocess.run("clear",shell=True,capture_output=True,text=True)
-        command = "shutdown -h now"
-        # Execute save before shutdown!
-        save_state()
-        # To shutdown raspberry
-        subprocess.run(command, shell=True, capture_output=True, text=True)
-        
+    a = str(ensure_four_digits(repeat_circum.input_field1.text()))
+    a1 = a
+    b = str(ensure_four_digits(repeat_circum.gr_tc_input.text()))
+    b1 = b
+    formatted_message = f"U\r\n{a1}{b1}00010001\r\n"
+    ser = serial.Serial(
+        port='/dev/ttyS0',
+        baudrate=9600,
+        parity=serial.PARITY_NONE,
+        stopbits=serial.STOPBITS_ONE,
+        bytesize=serial.EIGHTBITS,
+        timeout=1
+    )
+
+    if not ser.is_open:
+        ser.open()
+
+    ser.write(formatted_message.encode())
+    ser.close()
+
+    subprocess.run("clear", shell=True, capture_output=True, text=True)
+    command = "sudo shutdown -h now"
+    save_state()
+    subprocess.run(command, shell=True, capture_output=True, text=True)
+
+
     
 
 class Navigate_Buttons(QWidget):
@@ -453,17 +472,74 @@ class Navigate_Buttons(QWidget):
         with open('/home/camera1/resources/middle_value.txt', 'w') as file:
             file.write(str(self.current_value))
 
+    # def upButtonClicked(self):
+    #     # if(self.total_increment+self.increment_value <= int(repeat_circum.input_field1.text())):
+    #     #     self.total_increment += self.increment_value
+    #         # self.txt_total_increment.setText(str(self.total_increment))
+    #     a=str(ensure_four_digits(repeat_circum.input_field1.text()))
+    #     a1=a
+    #     b=str(ensure_four_digits(repeat_circum.gr_tc_input.text()))
+    #     b1=b
+    #     formatted_message = f"U\r\n{a1}{b1}00010000\r\n"
+    #     ser = serial.Serial(
+    #         port='/dev/ttyS0', 
+    #         baudrate=9600,
+    #         parity=serial.PARITY_NONE,
+    #         stopbits=serial.STOPBITS_ONE,
+    #         bytesize=serial.EIGHTBITS,
+    #         timeout=1
+    #     )
+
+    #     # Open the serial port if it's not already open
+    #     if not ser.is_open:
+    #         ser.open()
+
+    #     # Send the formatted message
+    #     ser.write(formatted_message.encode())
+
+    #     # Close the serial port
+    #     ser.close()
+
+    # def downButtonClicked(self):
+    #     # if self.total_increment - self.increment_value >= 0:
+    #     #     self.total_increment -= self.increment_value
+    #     # else:
+    #     #     self.total_increment = 0
+    #     a=str(ensure_four_digits(repeat_circum.input_field1.text()))
+    #     a1=a
+    #     b=str(ensure_four_digits(repeat_circum.gr_tc_input.text()))
+    #     b1=b
+    #     formatted_message = f"U\r\n{a1}{b1}00010000\r\n"
+    #     ser = serial.Serial(
+    #         port='/dev/ttyS0', 
+    #         baudrate=9600,
+    #         parity=serial.PARITY_NONE,
+    #         stopbits=serial.STOPBITS_ONE,
+    #         bytesize=serial.EIGHTBITS,
+    #         timeout=1
+    #     )
+
+    #     # Open the serial port if it's not already open
+    #     if not ser.is_open:
+    #         ser.open()
+
+    #     # Send the formatted message
+    #     ser.write(formatted_message.encode())
+
+    #     # Close the serial port
+    #     ser.close()
+
+    #     # self.txt_total_increment.setText(str(self.total_increment))
+
     def upButtonClicked(self):
-        # if(self.total_increment+self.increment_value <= int(repeat_circum.input_field1.text())):
-        #     self.total_increment += self.increment_value
-            # self.txt_total_increment.setText(str(self.total_increment))
-        a=str(ensure_four_digits(repeat_circum.input_field1.text()))
-        a1=a
-        b=str(ensure_four_digits(repeat_circum.gr_tc_input.text()))
-        b1=b
-        formatted_message = f"\r\n{a1}{b1}0001\r\n"
+        self.btn_up.setEnabled(False)
+        a = str(ensure_four_digits(repeat_circum.input_field1.text()))
+        a1 = a
+        b = str(ensure_four_digits(repeat_circum.gr_tc_input.text()))
+        b1 = b
+        formatted_message = f"U\r\n{a1}{b1}00010000\r\n"
         ser = serial.Serial(
-            port='/dev/ttyS0', 
+            port='/dev/ttyS0',
             baudrate=9600,
             parity=serial.PARITY_NONE,
             stopbits=serial.STOPBITS_ONE,
@@ -471,28 +547,23 @@ class Navigate_Buttons(QWidget):
             timeout=1
         )
 
-        # Open the serial port if it's not already open
         if not ser.is_open:
             ser.open()
 
-        # Send the formatted message
         ser.write(formatted_message.encode())
-
-        # Close the serial port
         ser.close()
+
+        QTimer.singleShot(2000, lambda: self.btn_up.setEnabled(True))
 
     def downButtonClicked(self):
-        # if self.total_increment - self.increment_value >= 0:
-        #     self.total_increment -= self.increment_value
-        # else:
-        #     self.total_increment = 0
-        a=str(ensure_four_digits(repeat_circum.input_field1.text()))
-        a1=a
-        b=str(ensure_four_digits(repeat_circum.gr_tc_input.text()))
-        b1=b
-        formatted_message = f"\r\n{a1}{b1}0002\r\n"
+        self.btn_down.setEnabled(False)
+        a = str(ensure_four_digits(repeat_circum.input_field1.text()))
+        a1 = a
+        b = str(ensure_four_digits(repeat_circum.gr_tc_input.text()))
+        b1 = b
+        formatted_message = f"U\r\n{a1}{b1}00010000\r\n"
         ser = serial.Serial(
-            port='/dev/ttyS0', 
+            port='/dev/ttyS0',
             baudrate=9600,
             parity=serial.PARITY_NONE,
             stopbits=serial.STOPBITS_ONE,
@@ -500,19 +571,17 @@ class Navigate_Buttons(QWidget):
             timeout=1
         )
 
-        # Open the serial port if it's not already open
         if not ser.is_open:
             ser.open()
 
-        # Send the formatted message
         ser.write(formatted_message.encode())
-
-        # Close the serial port
         ser.close()
 
-        # self.txt_total_increment.setText(str(self.total_increment))
+        QTimer.singleShot(2000, lambda: self.btn_down.setEnabled(True))
 
     def leftButtonClicked(self):
+        self.btn_right.setEnabled(False)
+        self.btn_left.setEnabled(False)
         middle_btn_value = int(self.btn_middle.text())
         time_to_sleep = 0
         if middle_btn_value == 25:
@@ -521,8 +590,8 @@ class Navigate_Buttons(QWidget):
             time_to_sleep = 1.2
         elif middle_btn_value == 150:
             time_to_sleep = 2.4
-        
-        if(self.txt_total_right_increment.text()==""):
+
+        if self.txt_total_right_increment.text() == "":
             self.total_increment_right = 0
         else:
             self.total_increment_right = int(self.txt_total_right_increment.text())
@@ -531,22 +600,21 @@ class Navigate_Buttons(QWidget):
                 self.total_increment_right -= self.increment_value
             else:
                 self.total_increment_right = 0
-            
-            # Set the text field before triggering the PWM pulses
+
             self.txt_total_right_increment.setText(str(self.total_increment_right))
             self.btn_left.setText("←")
             QCoreApplication.processEvents()
-            output_device.off() 
+            output_device.off()
             pwm.frequency = 400
-            pwm.value = 0.5  
-            
-            check_interval = 0.05  # Check every 0.05 seconds
+            pwm.value = 0.5
+
+            check_interval = 0.05
             elapsed_time = 0
-            
+
             while elapsed_time < time_to_sleep:
                 sleep(check_interval)
                 elapsed_time += check_interval
-                
+
                 if input_device_left.value == 1:
                     pwm.value = 0
                     self.btn_left.setText("E")
@@ -555,22 +623,26 @@ class Navigate_Buttons(QWidget):
                 pwm.value = 0
         else:
             self.btn_left.setText("E")
-        
-        if(input_device.value==0):
+
+        if input_device.value == 0:
             self.btn_right.setText("→")
+        self.btn_left.setEnabled(True)
+        self.btn_right.setEnabled(True)
 
 
 
     def rightButtonClicked(self):
+        self.btn_right.setEnabled(False)
+        self.btn_left.setEnabled(False)
         middle_btn_value = int(self.btn_middle.text())
-        time_to_sleep =0
-        if (middle_btn_value==25):
+        time_to_sleep = 0
+        if middle_btn_value == 25:
             time_to_sleep = 0.4
-        elif (middle_btn_value==75):
+        elif middle_btn_value == 75:
             time_to_sleep = 1.2
-        elif (middle_btn_value==150):
+        elif middle_btn_value == 150:
             time_to_sleep = 2.4
-        if(self.txt_total_right_increment.text()==""):
+        if self.txt_total_right_increment.text() == "":
             self.total_increment_right = 0
         else:
             self.total_increment_right = int(self.txt_total_right_increment.text())
@@ -582,16 +654,16 @@ class Navigate_Buttons(QWidget):
                     self.txt_total_right_increment.setText(str(self.total_increment_right))
                     self.btn_right.setText("→")
                     QCoreApplication.processEvents()
-                    output_device.on() 
+                    output_device.on()
                     pwm.frequency = 400
-                    pwm.value = 0.5  
-                    check_interval = 0.05  # Check every 0.05 seconds
+                    pwm.value = 0.5
+                    check_interval = 0.05
                     elapsed_time = 0
-                    
+
                     while elapsed_time < time_to_sleep:
                         sleep(check_interval)
                         elapsed_time += check_interval
-                        
+
                         if input_device.value == 1:
                             pwm.value = 0
                             self.btn_right.setText("E")
@@ -601,12 +673,25 @@ class Navigate_Buttons(QWidget):
                 else:
                     self.btn_right.setText("E")
             except KeyboardInterrupt:
-                pwm.value = 0    
+                pwm.value = 0
 
-        if(input_device_left.value==0):
+        if input_device_left.value == 0:
             self.btn_left.setText("←")
-            
-    
+        self.btn_right.setEnabled(True)
+        self.btn_left.setEnabled(True)
+
+    def swap_buttons(self):
+        self.btn_left.clicked.disconnect()
+        self.btn_right.clicked.disconnect()
+        self.btn_left.clicked.connect(self.rightButtonClicked)
+        self.btn_right.clicked.connect(self.leftButtonClicked)
+
+    def reset_buttons(self):
+        self.btn_left.clicked.disconnect()
+        self.btn_right.clicked.disconnect()
+        self.btn_left.clicked.connect(self.leftButtonClicked)
+        self.btn_right.clicked.connect(self.rightButtonClicked)
+
     def middleButtonClicked(self):
         # Program to toggle between middle values
         if self.current_value == 25:
@@ -733,15 +818,21 @@ class Repeat_Circum(QWidget):
         # self.input_field2.installEventFilter(self)
         # self.input_field2.editingFinished.connect(self.validate_input_circum)
 
-
         # Checkbox
         self.checkbox = QCheckBox("CAL")
         self.checkbox.setFont(font)
-        self.checkbox.stateChanged.connect(self.toggle_password_row)
+        self.checkbox.stateChanged.connect(self.toggle_hidden_widgets)
         self.checkbox.stateChanged.connect(self.change_logo)
         layout.addRow(self.checkbox)
 
-        
+        self.radio_lr = QRadioButton("L/R")
+        self.radio_rl = QRadioButton("R/L")
+        self.radio_lr.setFont(font)
+        self.radio_rl.setFont(font)
+        self.radio_lr.toggled.connect(self.on_lr_selected)
+        self.radio_rl.toggled.connect(self.on_rl_selected)
+        self.radio_lr.hide()
+        self.radio_rl.hide()
 
         # Password Row (Initially Hidden)
         self.password_label = QLabel("PASSWORD:")
@@ -759,6 +850,8 @@ class Repeat_Circum(QWidget):
         self.password_button.clicked.connect(self.check_password)
         self.password_label.hide()
         self.password_input.hide()
+        self.radio_lr.hide()
+        self.radio_rl.hide()
         self.password_button.hide()
         layout.addRow(self.password_label, self.password_input)
         layout.addWidget(self.password_button)
@@ -775,7 +868,8 @@ class Repeat_Circum(QWidget):
         
         # Initializing components
         layout.addRow(self.gr_tc_label, self.gr_tc_input)
-        
+        layout.addRow(self.radio_lr,self.radio_rl)
+
          # Create a QLabel widget
         self.label = QLabel(self)
 
@@ -798,6 +892,14 @@ class Repeat_Circum(QWidget):
         self.setGeometry(300, 300, 300, 200)
         layout.setContentsMargins(0, 0, 0, 0)
 
+
+    def on_lr_selected(self):
+        if self.radio_lr.isChecked():
+            navigate_Buttons.reset_buttons()
+
+    def on_rl_selected(self):
+        if self.radio_rl.isChecked():
+            navigate_Buttons.swap_buttons()
 
     def validate_input_repeat(self):
         try:
@@ -861,7 +963,7 @@ class Repeat_Circum(QWidget):
         # Open Onboard with the specified layout and position
         self.onboard_process = QProcess(self)
         self.onboard_process.start("onboard", ["-l", "Compact", "-x", str(x), "-y", str(y), "-s", str(size_onboard)])
-    def toggle_password_row(self, state):
+    def toggle_hidden_widgets(self, state):
         if state == Qt.Checked:
             self.password_label.show()
             self.password_input.show()
@@ -896,10 +998,14 @@ class Repeat_Circum(QWidget):
             self.gr_tc_input.show()
             self.label1.show()
             self.input_field1.show()
+            self.radio_lr.show()
+            self.radio_rl.show()
 
             self.submit_clicked = True
         else:
             self.gr_tc_label.hide()
+            self.radio_lr.hide()
+            self.radio_rl.hide()
             self.gr_tc_input.hide()
             self.label1.hide()
             self.input_field1.hide()
@@ -971,17 +1077,23 @@ class Image_Controls(QWidget):
         if self.hflip_btn.text() == "HORIZONTAL FLIP":
             self.hflip_btn.setText("BACK TO NORMAL")
             self.on_hflip_clicked() 
+            zoomDisplay.zoom_button.setText("ZOOM")
+
         else:
             self.hflip_btn.setText("HORIZONTAL FLIP")
             self.on_hflip_unclicked()  
+            zoomDisplay.zoom_button.setText("ZOOM")
+
     
     def toggle_function_v(self):
             if self.vflip_btn.text() == "VERTICAL FLIP":
                 self.vflip_btn.setText("BACK TO NORMAL")
                 self.on_vflip_clicked()
+                zoomDisplay.zoom_button.setText("ZOOM")
             else:
                 self.vflip_btn.setText("VERTICAL FLIP")
                 self.on_vflip_unclicked()
+                zoomDisplay.zoom_button.setText("ZOOM")
 
     def on_hflip_clicked(self):
         global hflip

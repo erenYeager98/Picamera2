@@ -1,0 +1,410 @@
+class Navigate_Buttons(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.initUI()
+
+    def initUI(self):
+        font = QFont()
+        font.setPointSize(16)
+        font2 = QFont()
+        font2.setPointSize(12)
+        self.current_value = self.load_middle_value()
+        self.increment_value = self.load_middle_value()
+        self.total_increment = 0
+        self.total_increment_right = 0
+        self.btn_up = QPushButton('↑', self)
+        self.btn_up.setFont(font)
+        btn_down = QPushButton('↓', self)
+        btn_down.setFont(font)
+        self.btn_left = QPushButton('←', self)
+        self.btn_right = QPushButton('→', self)
+        self.btn_left.setFont(font)
+        self.btn_right.setFont(font)
+        self.btn_middle = QPushButton(str(self.current_value), self)
+        self.btn_middle.setFont(font2)
+        self.txt_total_right_increment = QLineEdit(self)
+        self.home_btn = QPushButton("H")
+        self.home_btn.setFont(font)
+        self.txt_total_right_increment.setReadOnly(True)
+        self.txt_total_right_increment.setAlignment(Qt.AlignCenter)
+        self.txt_total_right_increment.setFixedWidth(35)
+        self.txt_total_right_increment.setFixedHeight(30)
+        self.txt_total_right_increment.setFont(font2)
+        self.btn_up.clicked.connect(self.upButtonClicked)
+        btn_down.clicked.connect(self.downButtonClicked)
+        self.btn_left.clicked.connect(self.leftButtonClicked)
+        self.btn_right.clicked.connect(self.rightButtonClicked)
+        self.btn_middle.clicked.connect(self.middleButtonClicked)
+        self.home_btn.clicked.connect(self.trigger_home_pulses)
+        btn_size = 60
+        self.btn_up.setFixedSize(btn_size, btn_size)
+        btn_down.setFixedSize(btn_size, btn_size)
+        self.btn_left.setFixedSize(btn_size, btn_size)
+        self.home_btn.setFixedSize(btn_size, btn_size)
+        self.btn_right.setFixedSize(btn_size, btn_size)
+        self.txt_total_right_increment.setFixedSize(btn_size, btn_size)
+        self.btn_middle.setFixedSize(btn_size, btn_size)
+        grid = QGridLayout()
+        grid.addWidget(self.btn_up, 0, 1)
+        grid.addWidget(self.btn_left, 1, 0)
+        grid.addWidget(self.btn_middle, 1, 1)
+        grid.addWidget(btn_down, 2, 1)
+        grid.addWidget(self.btn_right, 1, 2)
+        grid.addWidget(self.txt_total_right_increment, 0, 2)
+        grid.addWidget(self.home_btn, 2, 0)
+        grid.setContentsMargins(0, 0, 0, 0)
+        grid.setSpacing(0)
+
+        hbox = QHBoxLayout()
+        hbox.setContentsMargins(0, 0, 0, 0)
+        hbox.setSpacing(0)
+
+        vbox = QVBoxLayout()
+        vbox.addLayout(hbox)
+        vbox.addLayout(grid)
+        vbox.setContentsMargins(0, 0, 0, 0)
+        vbox.setSpacing(0)
+        self.setLayout(vbox)
+        self.layout().setSizeConstraint(QLayout.SetFixedSize)
+        self.setContentsMargins(0, 0, 0, 0)
+        self.adjustSize()
+        self.show()
+
+    def set_text(self):
+        self.txt_total_right_increment.setText("")
+        self.total_increment_right = 0
+
+    def trigger_home_pulses(self):
+        serial_thread_home.start()
+
+    def load_middle_value(self):
+        if os.path.exists('/home/camera1/resources/middle_value.txt'):
+            with open('/home/camera1/resources/middle_value.txt', 'r') as file:
+                return int(file.read())
+        else:
+            return 25
+
+    def save_middle_value(self):
+        with open('/home/camera1/resources/middle_value.txt', 'w') as file:
+            file.write(str(self.current_value))
+
+    def upButtonClicked(self):
+        a = str(ensure_four_digits(repeat_circum.input_field1.text()))
+        a1 = a
+        b = str(ensure_four_digits(repeat_circum.gr_tc_input.text()))
+        b1 = b
+        formatted_message = f"\r\n{a1}{b1}0001\r\n"
+        ser = serial.Serial(
+            port='/dev/ttyS0',
+            baudrate=9600,
+            parity=serial.PARITY_NONE,
+            stopbits=serial.STOPBITS_ONE,
+            bytesize=serial.EIGHTBITS,
+            timeout=1
+        )
+
+        if not ser.is_open:
+            ser.open()
+
+        ser.write(formatted_message.encode())
+        ser.close()
+
+    def downButtonClicked(self):
+        a = str(ensure_four_digits(repeat_circum.input_field1.text()))
+        a1 = a
+        b = str(ensure_four_digits(repeat_circum.gr_tc_input.text()))
+        b1 = b
+        formatted_message = f"\r\n{a1}{b1}0002\r\n"
+        ser = serial.Serial(
+            port='/dev/ttyS0',
+            baudrate=9600,
+            parity=serial.PARITY_NONE,
+            stopbits=serial.STOPBITS_ONE,
+            bytesize=serial.EIGHTBITS,
+            timeout=1
+        )
+
+        if not ser.is_open:
+            ser.open()
+
+        ser.write(formatted_message.encode())
+        ser.close()
+
+    def leftButtonClicked(self):
+        middle_btn_value = int(self.btn_middle.text())
+        time_to_sleep = 0
+        if middle_btn_value == 25:
+            time_to_sleep = 0.4
+        elif middle_btn_value == 75:
+            time_to_sleep = 1.2
+        elif middle_btn_value == 150:
+            time_to_sleep = 2.4
+
+        if self.txt_total_right_increment.text() == "":
+            self.total_increment_right = 0
+        else:
+            self.total_increment_right = int(self.txt_total_right_increment.text())
+        if input_device_left.value == 0:
+            if self.total_increment_right - self.increment_value >= 0:
+                self.total_increment_right -= self.increment_value
+            else:
+                self.total_increment_right = 0
+
+            self.txt_total_right_increment.setText(str(self.total_increment_right))
+            self.btn_left.setText("←")
+            QCoreApplication.processEvents()
+            output_device.off()
+            pwm.frequency = 400
+            pwm.value = 0.5
+
+            check_interval = 0.05
+            elapsed_time = 0
+
+            while elapsed_time < time_to_sleep:
+                sleep(check_interval)
+                elapsed_time += check_interval
+
+                if input_device_left.value == 1:
+                    pwm.value = 0
+                    self.btn_left.setText("E")
+                    break
+            else:
+                pwm.value = 0
+        else:
+            self.btn_left.setText("E")
+
+        if input_device.value == 0:
+            self.btn_right.setText("→")
+
+    def rightButtonClicked(self):
+        middle_btn_value = int(self.btn_middle.text())
+        time_to_sleep = 0
+        if middle_btn_value == 25:
+            time_to_sleep = 0.4
+        elif middle_btn_value == 75:
+            time_to_sleep = 1.2
+        elif middle_btn_value == 150:
+            time_to_sleep = 2.4
+        if self.txt_total_right_increment.text() == "":
+            self.total_increment_right = 0
+        else:
+            self.total_increment_right = int(self.txt_total_right_increment.text())
+
+        if self.total_increment_right + self.increment_value <= 1500:
+            try:
+                if input_device.value == 0:
+                    self.total_increment_right += self.increment_value
+                    self.txt_total_right_increment.setText(str(self.total_increment_right))
+                    self.btn_right.setText("→")
+                    QCoreApplication.processEvents()
+                    output_device.on()
+                    pwm.frequency = 400
+                    pwm.value = 0.5
+                    check_interval = 0.05
+                    elapsed_time = 0
+
+                    while elapsed_time < time_to_sleep:
+                        sleep(check_interval)
+                        elapsed_time += check_interval
+
+                        if input_device.value == 1:
+                            pwm.value = 0
+                            self.btn_right.setText("E")
+                            break
+                    else:
+                        pwm.value = 0
+                else:
+                    self.btn_right.setText("E")
+            except KeyboardInterrupt:
+                pwm.value = 0
+
+        if input_device_left.value == 0:
+            self.btn_left.setText("←")
+
+    def middleButtonClicked(self):
+        if self.current_value == 25:
+            self.current_value = 75
+            self.increment_value = 75
+        elif self.current_value == 75:
+            self.current_value = 150
+            self.increment_value = 150
+        else:
+            self.current_value = 25
+            self.increment_value = 25
+
+        self.btn_middle.setText(str(self.current_value))
+        self.save_middle_value()
+
+    def swap_buttons(self):
+        self.btn_left.clicked.disconnect()
+        self.btn_right.clicked.disconnect()
+        self.btn_left.clicked.connect(self.rightButtonClicked)
+        self.btn_right.clicked.connect(self.leftButtonClicked)
+
+    def reset_buttons(self):
+        self.btn_left.clicked.disconnect()
+        self.btn_right.clicked.disconnect()
+        self.btn_left.clicked.connect(self.leftButtonClicked)
+        self.btn_right.clicked.connect(self.rightButtonClicked)
+
+
+class Repeat_Circum(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.initUI()
+        self.onboard_process = None
+        self.submit_clicked = False
+
+    def initUI(self):
+        layout = QFormLayout()
+        font = QFont()
+        font.setPointSize(12)
+        self.label1 = QLabel("REPEAT:")
+        self.label1.setFont(font)
+        self.input_field1 = QLineEdit()
+        self.input_field1.setFont(font)
+        self.input_field1.setFixedWidth(55)
+        self.input_field1.installEventFilter(self)
+        self.checkbox = QCheckBox("CAL")
+        self.checkbox.setFont(font)
+        self.checkbox.stateChanged.connect(self.toggle_password_row)
+        self.checkbox.stateChanged.connect(self.change_logo)
+        layout.addRow(self.checkbox)
+
+        self.radio_lr = QRadioButton("L/R")
+        self.radio_rl = QRadioButton("R/L")
+        self.radio_lr.toggled.connect(self.on_lr_selected)
+        self.radio_rl.toggled.connect(self.on_rl_selected)
+        layout.addRow(self.radio_lr, self.radio_rl)
+
+        self.password_label = QLabel("PASSWORD:")
+        self.password_label.setFont(font)
+        self.password_input = QLineEdit()
+        self.password_input.setFont(font)
+        self.password_input.setFixedWidth(55)
+        self.password_input.setPlaceholderText("Enter Password")
+        self.password_input.setEchoMode(QLineEdit.Password)
+        validator = QIntValidator(400, 1500, self)
+        self.input_field1.setValidator(validator)
+        self.password_input.installEventFilter(self)
+        self.password_button = QPushButton("AUTHORIZE")
+        self.password_button.clicked.connect(self.check_password)
+        self.password_label.hide()
+        self.password_input.hide()
+        self.password_button.hide()
+        layout.addRow(self.password_label, self.password_input)
+        layout.addWidget(self.password_button)
+        layout.addRow(self.label1, self.input_field1)
+        self.label1.hide()
+        self.input_field1.hide()
+
+        self.gr_tc_label = QLabel("GR TC:")
+        self.gr_tc_label.setFont(font)
+        self.gr_tc_input = QLineEdit()
+        self.gr_tc_input.setFont(font)
+        self.gr_tc_input.setFixedWidth(55)
+        layout.addRow(self.gr_tc_label, self.gr_tc_input)
+
+        self.label = QLabel(self)
+        pixmap = QPixmap("/home/camera1/resources/logo.png")
+        self.label.setPixmap(pixmap)
+        self.label.resize(pixmap.width(), pixmap.height())
+        layout.addRow(self.label)
+
+        self.gr_tc_label.hide()
+        self.gr_tc_input.hide()
+        self.gr_tc_input.installEventFilter(self)
+        self.setLayout(layout)
+        self.gr_tc_input.setValidator(validator)
+        self.setWindowTitle('QFormLayout Example')
+        self.setGeometry(300, 300, 300, 200)
+        layout.setContentsMargins(0, 0, 0, 0)
+
+    def on_lr_selected(self):
+        if self.radio_lr.isChecked():
+            navigate_Buttons.reset_buttons()
+
+    def on_rl_selected(self):
+        if self.radio_rl.isChecked():
+            navigate_Buttons.swap_buttons()
+
+    def validate_input_repeat(self):
+        try:
+            value = int(self.input_field1.text())
+            if value is None:
+                self.input_field1.setText("0")
+        except ValueError:
+            self.input_field1.setText("0")
+        QCoreApplication.processEvents()
+
+    def validate_input_grtc(self):
+        try:
+            value = int(self.gr_tc_input.text())
+            if value < 1:
+                self.gr_tc_input.setText("1")
+            elif value > 100:
+                self.gr_tc_input.setText("100")
+        except ValueError:
+            self.gr_tc_input.setText("0")
+
+    def get_value_repeat(self):
+        return self.input_field1.text()
+
+    def eventFilter(self, source, event):
+        if event.type() == QEvent.FocusIn and source in [self.input_field1, self.password_input, self.gr_tc_input]:
+            self.open_onboard()
+        return super(Repeat_Circum, self).eventFilter(source, event)
+
+    def open_onboard(self):
+        screen_geometry = QDesktopWidget().screenGeometry()
+        screen_width = screen_geometry.width()
+        onboard_width = 1000
+        pos = self.input_field1.mapToGlobal(self.input_field1.rect().topLeft())
+        x = pos.x() + 248
+        y = pos.y() - 20
+        size_onboard = "220x200"
+        self.onboard_process = QProcess(self)
+        self.onboard_process.start("onboard", ["-l", "Compact", "-x", str(x), "-y", str(y), "-s", str(size_onboard)])
+
+    def toggle_password_row(self, state):
+        if state == Qt.Checked:
+            self.password_label.show()
+            self.password_input.show()
+            self.password_button.show()
+        else:
+            self.password_label.hide()
+            self.password_input.hide()
+            self.password_button.hide()
+            self.gr_tc_label.hide()
+            self.gr_tc_input.hide()
+            self.label1.hide()
+            self.input_field1.hide()
+            self.password_input.setText("")
+            if not self.submit_clicked:
+                self.password_button.setEnabled(True)
+
+    def change_logo(self):
+        global i
+        i += 1
+        if i % 2 != 0:
+            pixmap1 = QPixmap("/home/camera1/resources/logo_mini.png")
+            self.label.setPixmap(pixmap1)
+            self.label.resize(pixmap1.width(), pixmap1.height())
+        else:
+            pixmap = QPixmap("/home/camera1/resources/logo.png")
+            self.label.setPixmap(pixmap)
+            self.label.resize(pixmap.width(), pixmap.height())
+
+    def check_password(self):
+        password = self.password_input.text()
+        if password == "123":
+            self.gr_tc_label.show()
+            self.gr_tc_input.show()
+            self.label1.show()
+            self.input_field1.show()
+            self.submit_clicked = True
+        else:
+            self.gr_tc_label.hide()
+            self.gr_tc_input.hide()
+            self.label1.hide()
+            self.input_field1.hide()

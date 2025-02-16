@@ -1,19 +1,15 @@
-#V1
-#pwm frequency reduced 400 to 200
-#V2
-#left and right movement form 25,75 and 150 to 12,40 and 75
 #!/usr/bin/python3
 import subprocess
 import os
-import sys
-
 import numpy as np
 from gpiozero import PWMOutputDevice, DigitalOutputDevice,InputDevice
 from time import sleep
 import time
 import serial
+import threading
+import signal
 from PyQt5 import QtCore
-from PyQt5.QtCore import Qt, pyqtSignal,QThread,QProcess,QEvent,QCoreApplication,QTimer
+from PyQt5.QtCore import Qt, pyqtSignal,QThread,QProcess,QEvent,QCoreApplication, QTimer
 from PyQt5.QtGui import QIntValidator, QPixmap,QFont
 import libcamera
 from picamera2 import Picamera2
@@ -25,7 +21,7 @@ from PyQt5.QtWidgets import (QApplication, QCheckBox, QComboBox, QDesktopWidget,
 
 # Define constants and variables
 SERIAL_PORT = '/dev/ttyS0'
-BAUD_RATE = 1200 # Modify this value to define the baud rate
+BAUD_RATE = 9600 # Modify this value to define the baud rate
 hflip=0
 vflip=0
 i=0
@@ -35,12 +31,10 @@ input_pin = 10
 pin_17 = 17
 input_pin_left = 9
 output_pin = 26 
-stepper_enable_pin = 19
 pwm_pin = 13 
 input_device = InputDevice(input_pin)
 input_17 = InputDevice(pin_17)
 output_device = DigitalOutputDevice(output_pin)
-stepper_enable = DigitalOutputDevice(stepper_enable_pin)
 input_device_left = InputDevice(input_pin_left)
 pwm = PWMOutputDevice(pwm_pin)
 def request_callback(request):
@@ -48,6 +42,12 @@ def request_callback(request):
 
 def cleanup():
     picam2.post_callback = None
+
+picam2 = Picamera2()
+picam2.post_callback = request_callback
+picam2.configure(picam2.create_preview_configuration(main={"size": (800, 600)}))
+app = QApplication([])
+
 def ensure_four_digits(input_string):
     digits = ''.join(filter(str.isdigit, input_string))
     
@@ -66,39 +66,35 @@ class Shutdown_by_pin(QThread):
                 time.sleep(0.1)
                
 
-#class SerialThread_Home(QThread):
-#    finished1 = pyqtSignal()
+class SerialThread_Home(QThread):
+    finished1 = pyqtSignal()
 
-#    def run(self):
-#        if input_device_left.value == 0:
-#            if output_device == 0:
-#                output_device.on()
-#            pwm.frequency = 800
-#            pwm.value = 0.5
+    def run(self):
+        if input_device_left.value == 0:
+            if output_device == 0:
+                output_device.on()
+            pwm.frequency = 800
+            pwm.value = 0.5
             
-#            total_sleep_time = 12
-#            check_interval = 0.05  # Check every 0.05 seconds
-#            elapsed_time = 0
+            total_sleep_time = 12
+            check_interval = 0.05  # Check every 0.05 seconds
+            elapsed_time = 0
             
-#            while elapsed_time < total_sleep_time:
-#                sleep(check_interval)
-#                elapsed_time += check_interval
-#                
-#                if input_device_left.value == 1:
-#                    pwm.value = 0
-#                    #navigate_Buttons.set_text()
-#                    #self.btn_left.setText("E")
-#                    break
-#            else:
-#                pwm.value = 0
-#        else:
-#            output_device.off()
-#            pwm.value = 0
-#            #navigate_Buttons.set_text()            
-#            #self.finished1.emit()
-        
-#        if(input_device.value==0):
-#            self.btn_right.setText("→")
+            while elapsed_time < total_sleep_time:
+                sleep(check_interval)
+                elapsed_time += check_interval
+                
+                if input_device_left.value == 1:
+                    pwm.value = 0
+                    navigate_Buttons.set_text()
+                    break
+            else:
+                pwm.value = 0
+        else:
+            output_device.off()
+            pwm.value = 0
+            navigate_Buttons.set_text()            
+        self.finished1.emit()
 
 class SavingThread(QThread):
     finished2 = pyqtSignal()
@@ -107,8 +103,8 @@ class SavingThread(QThread):
             save_state()
             time.sleep(5)
 
-# def set_txt_():
-#     navigate_Buttons.txt_total_right_increment.setText("0")
+def set_txt_():
+    navigate_Buttons.txt_total_right_increment.setText("0")
 
 def save_state():
         filePath="/home/camera1/resources/widget_state.txt"
@@ -116,13 +112,10 @@ def save_state():
 
         stateValue1 = "0"
         stateValue2 = "0"
-        radio_state = "0"
         if(image_Controls.hflip_btn.text()=="BACK TO NORMAL"):
             stateValue1 = "1"
         if(image_Controls.vflip_btn.text()=="BACK TO NORMAL"):
             stateValue2 = "1"
-        if repeat_circum.radio_rl.isChecked():
-            radio_state = "1"
         state = [
             stateValue1,
             stateValue2,
@@ -130,56 +123,20 @@ def save_state():
             repeat_circum.input_field1.text(),
             # repeat_circum.input_field2.text(),
             repeat_circum.gr_tc_input.text(),
-            radio_state
-            # navigate_Buttons.txt_total_right_increment.text()
+            navigate_Buttons.txt_total_right_increment.text()
         ]
         if(state[3]==""):
             state[3]=="0"
         if(state[4]==""):
             state[4]=="0"
-        if(state[5]==""):
+        if(state[5]==None):
             state[5]=="0"
-        # if(state[5]==None):
-        #     state[5]=="0"
         # if(state[6]==None):
         #     state[6]=="0"
         
 
         with open(filePath, 'w') as file:
             file.write('\n'.join(state))
-
-def pop_error():
-    app = QApplication(sys.argv)
-    font = QFont()
-    font.setPointSize(12)
-    # Create the main window
-    window = QWidget()
-    window.setWindowTitle('Error')
-    window.setWindowFlags(Qt.FramelessWindowHint)
-    shutdown_btn = QPushButton("X")
-    shutdown_btn.setFont(font)
-    shutdown_btn.setFixedWidth(35)
-    shutdown_btn.setFixedHeight(35)
-    shutdown_btn.clicked.connect(shutdown_pi_without_saving)
-    # Set up the layout and label
-    layout = QVBoxLayout()
-    label = QLabel(f"Camera Disconnected")
-
-    # Customize the label if needed
-    label.setWordWrap(True)
-
-    # Add the label to the layout
-    layout.addWidget(shutdown_btn)
-    layout.addWidget(label)
-
-    # Set the layout for the main window
-    window.setLayout(layout)
-
-    # Show the window
-    window.show()
-
-    # Run the application's main loop
-    sys.exit(app.exec_())
 
 def load_state():
         filePath = '/home/camera1/resources/widget_state.txt'
@@ -210,13 +167,9 @@ def load_state():
                     zoomDisplay.zoom_button.click()
                 repeat_circum.input_field1.setText(str(state[3].strip()))
                 repeat_circum.gr_tc_input.setText(str(state[4].strip()))
-                if(state[5].strip()=="1"):
-                    repeat_circum.radio_rl.click()
-                else:    
-                    repeat_circum.radio_lr.click()
-                # if(len(state)==5):
-                #     state.append("0")
-                # navigate_Buttons.txt_total_right_increment.setText(str(state[5].strip()))
+                if(len(state)==5):
+                    state.append("0")        
+                navigate_Buttons.txt_total_right_increment.setText(str(state[5].strip()))
                 # navigate_Buttons.txt_total_increment.setText("0")
 
                 
@@ -226,10 +179,10 @@ def load_state():
         a1=a
         b=str(ensure_four_digits(repeat_circum.gr_tc_input.text()))
         b1=b
-        formatted_message = f"U\r\n{a1}{b1}0000\r\n"
+        formatted_message = f"\r\n{a1}{b1}0000\r\n"
         ser = serial.Serial(
             port='/dev/ttyS0', 
-            baudrate=1200,
+            baudrate=9600,
             parity=serial.PARITY_NONE,
             stopbits=serial.STOPBITS_ONE,
             bytesize=serial.EIGHTBITS,
@@ -392,26 +345,33 @@ class logControlSlider(QWidget):
         return self.box.value()
 
 def shutdown_pi():
-        stepper_enable.off()
-        # Execute save before shutdown!
-        save_state()
-        subprocess.run("clear",shell=True,capture_output=True,text=True)
-        subprocess.run("killall openbox",shell=True,capture_output=True,text=True) 
-        subprocess.run("killall pigpiod",shell=True,capture_output=True,text=True) 
-        #subprocess.run("killall app",shell=True,capture_output=True,text=True) 
-        command = "shutdown -h now"
-        # To shutdown raspberry
-        subprocess.run(command, shell=True, capture_output=True, text=True)
-        
-def shutdown_pi_without_saving():
+    a = str(ensure_four_digits(repeat_circum.input_field1.text()))
+    a1 = a
+    b = str(ensure_four_digits(repeat_circum.gr_tc_input.text()))
+    b1 = b
+    formatted_message = f"U\r\n{a1}{b1}00010001\r\n"
+    ser = serial.Serial(
+        port='/dev/ttyS0',
+        baudrate=9600,
+        parity=serial.PARITY_NONE,
+        stopbits=serial.STOPBITS_ONE,
+        bytesize=serial.EIGHTBITS,
+        timeout=1
+    )
+
+    if not ser.is_open:
+        ser.open()
+
+    ser.write(formatted_message.encode())
+    ser.close()
+
     subprocess.run("clear", shell=True, capture_output=True, text=True)
-    subprocess.run("killall openbox",shell=True,capture_output=True,text=True)
-    subprocess.run("killall pigpiod",shell=True,capture_output=True,text=True)
-    #subprocess.run("killall app",shell=True,capture_output=True,text=True) 
-    command = "shutdown -h now"
-    # Execute save before shutdown!
-    # To shutdown raspberry
+    command = "sudo shutdown -h now"
+    save_state()
     subprocess.run(command, shell=True, capture_output=True, text=True)
+
+
+    
 
 class Navigate_Buttons(QWidget):
     def __init__(self):
@@ -442,38 +402,38 @@ class Navigate_Buttons(QWidget):
         # self.txt_total_increment.setAlignment(Qt.AlignCenter)
         # self.txt_total_increment.setFixedWidth(35)  
         # self.txt_total_increment.setFixedHeight(30)
-        # self.txt_total_right_increment = QLineEdit(self)
-#        self.home_btn = QPushButton("H")
-#        self.home_btn.setFont(font)
-        # self.txt_total_right_increment.setReadOnly(True)
-        # self.txt_total_right_increment.setAlignment(Qt.AlignCenter)
-        # self.txt_total_right_increment.setFixedWidth(35)
-        # self.txt_total_right_increment.setFixedHeight(30)
+        self.txt_total_right_increment = QLineEdit(self)
+        self.home_btn = QPushButton("H")
+        self.home_btn.setFont(font)
+        self.txt_total_right_increment.setReadOnly(True)
+        self.txt_total_right_increment.setAlignment(Qt.AlignCenter)
+        self.txt_total_right_increment.setFixedWidth(35)
+        self.txt_total_right_increment.setFixedHeight(30)
         # self.txt_total_increment.setFont(font2)
-        # self.txt_total_right_increment.setFont(font2)
+        self.txt_total_right_increment.setFont(font2)
         self.btn_up.clicked.connect(self.upButtonClicked)
         btn_down.clicked.connect(self.downButtonClicked)
         self.btn_left.clicked.connect(self.leftButtonClicked)
         self.btn_right.clicked.connect(self.rightButtonClicked)
         self.btn_middle.clicked.connect(self.middleButtonClicked)
-#        self.home_btn.clicked.connect(self.trigger_home_pulses)
+        self.home_btn.clicked.connect(self.trigger_home_pulses)
         btn_size = 60
         self.btn_up.setFixedSize(btn_size, btn_size)
         btn_down.setFixedSize(btn_size, btn_size)
         self.btn_left.setFixedSize(btn_size, btn_size)
- #       self.home_btn.setFixedSize(btn_size, btn_size)
+        self.home_btn.setFixedSize(btn_size, btn_size)
         self.btn_right.setFixedSize(btn_size, btn_size)
         # self.txt_total_increment.setFixedSize(btn_size,btn_size)
-        # self.txt_total_right_increment.setFixedSize(btn_size,btn_size)
+        self.txt_total_right_increment.setFixedSize(btn_size,btn_size)
         self.btn_middle.setFixedSize(btn_size, btn_size)
         grid = QGridLayout()
-        grid.addWidget(self.btn_up, 0, 0)
+        grid.addWidget(self.btn_up, 0, 1)
         grid.addWidget(self.btn_left, 1, 0)
         grid.addWidget(self.btn_middle, 1, 1)
-        grid.addWidget(btn_down, 0, 2)
+        grid.addWidget(btn_down, 2, 1)
         grid.addWidget(self.btn_right, 1, 2)
-        # grid.addWidget(self.txt_total_right_increment,0,2)
-#        grid.addWidget(self.home_btn,2,0)
+        grid.addWidget(self.txt_total_right_increment,0,2)
+        grid.addWidget(self.home_btn,2,0)
         grid.setContentsMargins(0,0,0,0)
         grid.setSpacing(0)
 
@@ -494,12 +454,12 @@ class Navigate_Buttons(QWidget):
         self.show()
         
     def set_text(self):
-        # self.txt_total_right_increment.setText("")
+        self.txt_total_right_increment.setText("") 
         self.total_increment_right = 0
 
-#    def trigger_home_pulses(self):
-#        # Start separate thread for pulse generation due to program being stuck while generating.
-#        serial_thread_home.start()
+    def trigger_home_pulses(self):
+        # Start separate thread for pulse generation due to program being stuck while generating.
+        serial_thread_home.start()
 
     def load_middle_value(self):
         if os.path.exists('/home/camera1/resources/middle_value.txt'):
@@ -511,6 +471,65 @@ class Navigate_Buttons(QWidget):
     def save_middle_value(self):
         with open('/home/camera1/resources/middle_value.txt', 'w') as file:
             file.write(str(self.current_value))
+
+    # def upButtonClicked(self):
+    #     # if(self.total_increment+self.increment_value <= int(repeat_circum.input_field1.text())):
+    #     #     self.total_increment += self.increment_value
+    #         # self.txt_total_increment.setText(str(self.total_increment))
+    #     a=str(ensure_four_digits(repeat_circum.input_field1.text()))
+    #     a1=a
+    #     b=str(ensure_four_digits(repeat_circum.gr_tc_input.text()))
+    #     b1=b
+    #     formatted_message = f"U\r\n{a1}{b1}00010000\r\n"
+    #     ser = serial.Serial(
+    #         port='/dev/ttyS0', 
+    #         baudrate=9600,
+    #         parity=serial.PARITY_NONE,
+    #         stopbits=serial.STOPBITS_ONE,
+    #         bytesize=serial.EIGHTBITS,
+    #         timeout=1
+    #     )
+
+    #     # Open the serial port if it's not already open
+    #     if not ser.is_open:
+    #         ser.open()
+
+    #     # Send the formatted message
+    #     ser.write(formatted_message.encode())
+
+    #     # Close the serial port
+    #     ser.close()
+
+    # def downButtonClicked(self):
+    #     # if self.total_increment - self.increment_value >= 0:
+    #     #     self.total_increment -= self.increment_value
+    #     # else:
+    #     #     self.total_increment = 0
+    #     a=str(ensure_four_digits(repeat_circum.input_field1.text()))
+    #     a1=a
+    #     b=str(ensure_four_digits(repeat_circum.gr_tc_input.text()))
+    #     b1=b
+    #     formatted_message = f"U\r\n{a1}{b1}00010000\r\n"
+    #     ser = serial.Serial(
+    #         port='/dev/ttyS0', 
+    #         baudrate=9600,
+    #         parity=serial.PARITY_NONE,
+    #         stopbits=serial.STOPBITS_ONE,
+    #         bytesize=serial.EIGHTBITS,
+    #         timeout=1
+    #     )
+
+    #     # Open the serial port if it's not already open
+    #     if not ser.is_open:
+    #         ser.open()
+
+    #     # Send the formatted message
+    #     ser.write(formatted_message.encode())
+
+    #     # Close the serial port
+    #     ser.close()
+
+    #     # self.txt_total_increment.setText(str(self.total_increment))
 
     def upButtonClicked(self):
         self.btn_up.setEnabled(False)
@@ -672,19 +691,18 @@ class Navigate_Buttons(QWidget):
         self.btn_right.clicked.disconnect()
         self.btn_left.clicked.connect(self.leftButtonClicked)
         self.btn_right.clicked.connect(self.rightButtonClicked)
-            
-    
+
     def middleButtonClicked(self):
         # Program to toggle between middle values
-        if self.current_value == 12:
-            self.current_value = 40
-            self.increment_value = 40
-        elif self.current_value == 40:
+        if self.current_value == 25:
             self.current_value = 75
             self.increment_value = 75
+        elif self.current_value == 75:
+            self.current_value = 150
+            self.increment_value = 150
         else:
-            self.current_value = 12
-            self.increment_value = 12
+            self.current_value = 25
+            self.increment_value = 25
             
         self.btn_middle.setText(str(self.current_value))
 
@@ -800,11 +818,10 @@ class Repeat_Circum(QWidget):
         # self.input_field2.installEventFilter(self)
         # self.input_field2.editingFinished.connect(self.validate_input_circum)
 
-
         # Checkbox
         self.checkbox = QCheckBox("CAL")
         self.checkbox.setFont(font)
-        self.checkbox.stateChanged.connect(self.toggle_password_row)
+        self.checkbox.stateChanged.connect(self.toggle_hidden_widgets)
         self.checkbox.stateChanged.connect(self.change_logo)
         layout.addRow(self.checkbox)
 
@@ -816,7 +833,6 @@ class Repeat_Circum(QWidget):
         self.radio_rl.toggled.connect(self.on_rl_selected)
         self.radio_lr.hide()
         self.radio_rl.hide()
-
 
         # Password Row (Initially Hidden)
         self.password_label = QLabel("PASSWORD:")
@@ -834,10 +850,11 @@ class Repeat_Circum(QWidget):
         self.password_button.clicked.connect(self.check_password)
         self.password_label.hide()
         self.password_input.hide()
+        self.radio_lr.hide()
+        self.radio_rl.hide()
         self.password_button.hide()
         layout.addRow(self.password_label, self.password_input)
         layout.addWidget(self.password_button)
-        layout.addRow(self.radio_lr,self.radio_rl)
         layout.addRow(self.label1, self.input_field1)
         self.label1.hide()
         self.input_field1.hide()
@@ -851,7 +868,8 @@ class Repeat_Circum(QWidget):
         
         # Initializing components
         layout.addRow(self.gr_tc_label, self.gr_tc_input)
-        
+        layout.addRow(self.radio_lr,self.radio_rl)
+
          # Create a QLabel widget
         self.label = QLabel(self)
 
@@ -875,6 +893,14 @@ class Repeat_Circum(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
 
 
+    def on_lr_selected(self):
+        if self.radio_lr.isChecked():
+            navigate_Buttons.reset_buttons()
+
+    def on_rl_selected(self):
+        if self.radio_rl.isChecked():
+            navigate_Buttons.swap_buttons()
+
     def validate_input_repeat(self):
         try:
             value = int(self.input_field1.text())
@@ -896,16 +922,6 @@ class Repeat_Circum(QWidget):
     #             self.input_field2.setText("1500")
     #     except ValueError:
     #         self.input_field2.setText("0")
-
-
-    def on_lr_selected(self):
-        if self.radio_lr.isChecked():
-            navigate_Buttons.reset_buttons()
-
-    def on_rl_selected(self):
-        if self.radio_rl.isChecked():
-            navigate_Buttons.swap_buttons()
-
 
     def validate_input_grtc(self):
         try:
@@ -947,7 +963,7 @@ class Repeat_Circum(QWidget):
         # Open Onboard with the specified layout and position
         self.onboard_process = QProcess(self)
         self.onboard_process.start("onboard", ["-l", "Compact", "-x", str(x), "-y", str(y), "-s", str(size_onboard)])
-    def toggle_password_row(self, state):
+    def toggle_hidden_widgets(self, state):
         if state == Qt.Checked:
             self.password_label.show()
             self.password_input.show()
@@ -977,7 +993,7 @@ class Repeat_Circum(QWidget):
 
     def check_password(self):
         password = self.password_input.text()
-        if password == "1121":
+        if password == "123":  
             self.gr_tc_label.show()
             self.gr_tc_input.show()
             self.label1.show()
@@ -988,9 +1004,9 @@ class Repeat_Circum(QWidget):
             self.submit_clicked = True
         else:
             self.gr_tc_label.hide()
-            self.gr_tc_input.hide()
             self.radio_lr.hide()
             self.radio_rl.hide()
+            self.gr_tc_input.hide()
             self.label1.hide()
             self.input_field1.hide()
 
@@ -1050,11 +1066,11 @@ class Image_Controls(QWidget):
         sharpness_label.setFont(font)
         brightness_label = QLabel("BRIGHTNESS")
         brightness_label.setFont(font)
-        #self.layout.addRow(saturation_label, self.saturation)
-        #self.layout.addRow(contrast_label, self.contrast)
-        #self.layout.addRow(sharpness_label, self.sharpness)
-        #self.layout.addRow(brightness_label, self.brightness)
-        #self.layout.addRow(self.reset_button)
+        self.layout.addRow(saturation_label, self.saturation)
+        self.layout.addRow(contrast_label, self.contrast)
+        self.layout.addRow(sharpness_label, self.sharpness)
+        self.layout.addRow(brightness_label, self.brightness)
+        self.layout.addRow(self.reset_button)
         self.layout.setContentsMargins(0,0,0,0)
             
     def toggle_function_h(self):
@@ -1070,15 +1086,14 @@ class Image_Controls(QWidget):
 
     
     def toggle_function_v(self):
-        if self.vflip_btn.text() == "VERTICAL FLIP":
-            self.vflip_btn.setText("BACK TO NORMAL")
-            self.on_vflip_clicked()
-            zoomDisplay.zoom_button.setText("ZOOM")
-        else:
-            self.vflip_btn.setText("VERTICAL FLIP")
-            self.on_vflip_unclicked()
-            zoomDisplay.zoom_button.setText("ZOOM")
-
+            if self.vflip_btn.text() == "VERTICAL FLIP":
+                self.vflip_btn.setText("BACK TO NORMAL")
+                self.on_vflip_clicked()
+                zoomDisplay.zoom_button.setText("ZOOM")
+            else:
+                self.vflip_btn.setText("VERTICAL FLIP")
+                self.on_vflip_unclicked()
+                zoomDisplay.zoom_button.setText("ZOOM")
 
     def on_hflip_clicked(self):
         global hflip
@@ -1088,7 +1103,6 @@ class Image_Controls(QWidget):
         preview_config = picam2.create_preview_configuration()
         preview_config["transform"] = libcamera.Transform(hflip=hflip,vflip=vflip)
         picam2.configure(preview_config)
-        picam2.set_controls({"FrameRate": 1})
         picam2.start()
     def on_hflip_unclicked(self):
         global hflip
@@ -1098,7 +1112,6 @@ class Image_Controls(QWidget):
         preview_config = picam2.create_preview_configuration()
         preview_config["transform"] = libcamera.Transform(hflip=hflip,vflip=vflip)
         picam2.configure(preview_config)
-        picam2.set_controls({"FrameRate": 1})
         picam2.start()
     def on_vflip_clicked(self):
         global vflip
@@ -1108,7 +1121,6 @@ class Image_Controls(QWidget):
         preview_config = picam2.create_preview_configuration()
         preview_config["transform"] = libcamera.Transform(hflip=hflip,vflip=vflip)
         picam2.configure(preview_config)
-        picam2.set_controls({"FrameRate": 1})
         picam2.start()
     def on_vflip_unclicked(self):
         global vflip
@@ -1118,9 +1130,10 @@ class Image_Controls(QWidget):
         preview_config = picam2.create_preview_configuration()
         preview_config["transform"] = libcamera.Transform(hflip=hflip,vflip=vflip)
         picam2.configure(preview_config)
-        picam2.set_controls({"FrameRate": 1})
         picam2.start()
-
+    def toggle_function_zoom(self):
+        if self.zoom_btn.text()=="Zoom":
+            self.zoom_btn.setText("2X")
 
     @property
     def img_dict(self):
@@ -1149,14 +1162,7 @@ class Image_Controls(QWidget):
         picam2.set_controls(self.img_dict)
 
 # Initialize the Main window with the defined widgets.
-try:
-    picam2 = Picamera2()
-except Exception:
-    pop_error()
-    sys.exit()
-picam2.post_callback = request_callback
-picam2.configure(picam2.create_preview_configuration(main={"size": (800, 600)}))
-app = QApplication([])
+
 _, scaler_crop, _ = picam2.camera_controls['ScalerCrop']
 image_Controls= Image_Controls()
 qpicamera2 = QPicamera2(picam2, width=800, height=600)
@@ -1191,7 +1197,6 @@ layout_h.addWidget(qpicamera2, 80)
 layout_h.setContentsMargins(0,0,0,0)
 window.resize(1600, 1000)
 window.setLayout(layout_h)
-picam2.set_controls({"FrameRate": 3})
 picam2.start()
 
 def turn_off_wifi_bluetooth():
@@ -1199,10 +1204,10 @@ def turn_off_wifi_bluetooth():
     subprocess.run("sudo hciconfig hci0 down", shell=True, capture_output=True, text=True)
 
 if __name__ == '__main__':
-    # window.setWindowFlags(Qt.FramelessWindowHint)
+    window.setWindowFlags(Qt.FramelessWindowHint)
     window.showMaximized()
     # serial_thread = SerialThread()
-    # serial_thread_home = SerialThread_Home()
+    serial_thread_home = SerialThread_Home()
     # serial_thread.start()
     savingThread = SavingThread()
     # savingThread.start()

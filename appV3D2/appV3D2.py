@@ -150,6 +150,7 @@ def save_state():
             repeat_circum.input_field1.text(),
             # repeat_circum.input_field2.text(),
             repeat_circum.gr_tc_input.text(),
+            radio_state
             # navigate_Buttons.txt_total_right_increment.text()
         ]
         if(state[3]==""):
@@ -621,8 +622,9 @@ class Navigate_Buttons(QWidget):
         # self.txt_total_increment.setText(str(self.total_increment))
 
     def leftButtonClicked(self):
-        self.btn_right.setEnabled(False)
         self.btn_left.setEnabled(False)
+
+        print("left function")
         middle_btn_value = int(self.btn_middle.text())
         time_to_sleep = 0
         if middle_btn_value == 12:
@@ -671,14 +673,70 @@ class Navigate_Buttons(QWidget):
         
         if(input_device.value==0):
             self.btn_right.setText("→")
-        self.btn_left.setEnabled(True)
-        self.btn_right.setEnabled(True)
+        time_to_pause=int(time_to_sleep*1000)
+        QTimer.singleShot(time_to_pause, lambda: self.btn_left.setEnabled(True))
+
+    def leftButtonClicked_rl(self):
+        self.btn_left.setEnabled(False)
+
+        print("left function")
+        middle_btn_value = int(self.btn_middle.text())
+        time_to_sleep = 0
+        if middle_btn_value == 12:
+            time_to_sleep = 0.2
+        elif middle_btn_value == 40:
+            time_to_sleep = 0.6
+        elif middle_btn_value == 75:
+            time_to_sleep = 1.2
+        
+        # if(self.txt_total_right_increment.text()==""):
+        #     self.total_increment_right = 0
+        # else:
+        #     self.total_increment_right = int(self.txt_total_right_increment.text())
+        if input_device_left.value == 0:
+            if self.total_increment_right - self.increment_value >= 0:
+                self.total_increment_right -= self.increment_value
+            else:
+                self.total_increment_right = 0
+            
+            # Set the text field before triggering the PWM pulses
+            # self.txt_total_right_increment.setText(str(self.total_increment_right))
+            self.btn_left.setText("←")
+            QCoreApplication.processEvents()
+            output_device.off()
+            stepper_enable.on() 
+            pwm.frequency = 200
+            pwm.value = 0.5  
+            
+            check_interval = 0.05  # Check every 0.05 seconds
+            elapsed_time = 0
+            
+            while elapsed_time < time_to_sleep:
+                sleep(check_interval)
+                elapsed_time += check_interval
+                
+                if input_device_left.value == 1:
+                    pwm.value = 0
+                    stepper_enable.off()
+                    self.btn_right.setText("E")
+                    break
+            else:
+                pwm.value = 0
+                stepper_enable.off()
+        else:
+            self.btn_right.setText("E")
+        
+        if(input_device.value==0):
+            self.btn_right.setText("→")
+        time_to_pause=int(time_to_sleep*1000)
+        QTimer.singleShot(time_to_pause, lambda: self.btn_left.setEnabled(True))
+
 
 
 
     def rightButtonClicked(self):
         self.btn_right.setEnabled(False)
-        self.btn_left.setEnabled(False)
+        print("right function")
         middle_btn_value = int(self.btn_middle.text())
         time_to_sleep =0
         if (middle_btn_value==12):
@@ -726,14 +784,67 @@ class Navigate_Buttons(QWidget):
 
         if(input_device_left.value==0):
             self.btn_left.setText("←")
-        self.btn_right.setEnabled(True)
-        self.btn_left.setEnabled(True)
+        time_to_pause=int(time_to_sleep*1000)
+        QTimer.singleShot(time_to_pause, lambda: self.btn_right.setEnabled(True))
+    
+    def rightButtonClicked_rl(self):
+        self.btn_right.setEnabled(False)
+        print("right function")
+        middle_btn_value = int(self.btn_middle.text())
+        time_to_sleep =0
+        if (middle_btn_value==12):
+            time_to_sleep = 0.2
+        elif (middle_btn_value==40):
+            time_to_sleep = 0.6
+        elif (middle_btn_value==75):
+            time_to_sleep = 1.2
+        # if(self.txt_total_right_increment.text()==""):
+        #     self.total_increment_right = 0
+        # else:
+        #     self.total_increment_right = int(self.txt_total_right_increment.text())
+
+
+        try:
+            if input_device.value == 0:
+                self.total_increment_right += self.increment_value
+                # self.txt_total_right_increment.setText(str(self.total_increment_right))
+                self.btn_right.setText("→")
+                QCoreApplication.processEvents()
+                output_device.on()
+                stepper_enable.on()
+                pwm.frequency = 200
+                pwm.value = 0.5
+                check_interval = 0.05  # Check every 0.05 seconds
+                elapsed_time = 0
+
+                while elapsed_time < time_to_sleep:
+                    sleep(check_interval)
+                    elapsed_time += check_interval
+
+                    if input_device.value == 1:
+                        pwm.value = 0
+                        stepper_enable.off()
+                        self.btn_left.setText("E")
+                        break
+                else:
+                    pwm.value = 0
+                    stepper_enable.off() 
+            else:
+                self.btn_left.setText("E")
+        except KeyboardInterrupt:
+            pwm.value = 0
+            stepper_enable.off()
+
+        if(input_device_left.value==0):
+            self.btn_left.setText("←")
+        time_to_pause=int(time_to_sleep*1000)
+        QTimer.singleShot(time_to_pause, lambda: self.btn_right.setEnabled(True))
 
     def swap_buttons(self):
         self.btn_left.clicked.disconnect()
         self.btn_right.clicked.disconnect()
-        self.btn_left.clicked.connect(self.rightButtonClicked)
-        self.btn_right.clicked.connect(self.leftButtonClicked)
+        self.btn_left.clicked.connect(self.rightButtonClicked_rl)
+        self.btn_right.clicked.connect(self.leftButtonClicked_rl)
 
     def reset_buttons(self):
         self.btn_left.clicked.disconnect()
@@ -1027,6 +1138,8 @@ class Repeat_Circum(QWidget):
             self.gr_tc_input.hide()
             self.label1.hide()
             self.input_field1.hide()
+            self.radio_lr.hide()
+            self.radio_rl.hide()
             self.password_input.setText("")
             if not self.submit_clicked:
                 self.password_button.setEnabled(True)

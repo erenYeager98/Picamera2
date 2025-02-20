@@ -154,7 +154,7 @@ def save_state():
         state = [
             stateValue1,
             stateValue2,
-            zoomDisplay.zoom_button.text(),
+            image_Controls.zoom_button.text(),
             repeat_circum.input_field1.text(),
             # repeat_circum.input_field2.text(),
             repeat_circum.gr_tc_input.text(),
@@ -224,19 +224,19 @@ def load_state():
                 if(state[1].strip()=="1"):
                     image_Controls.vflip_btn.click()
                 if(state[2].strip()=="2X"):
-                    zoomDisplay.zoom_button.click()
+                    image_Controls.zoom_button.click()
                 if(state[2].strip()=="3X"):
-                    zoomDisplay.zoom_button.click()
-                    zoomDisplay.zoom_button.click()
+                    image_Controls.zoom_button.click()
+                    image_Controls.zoom_button.click()
                 if(state[2].strip()=="4X"):
-                    zoomDisplay.zoom_button.click()
-                    zoomDisplay.zoom_button.click()
-                    zoomDisplay.zoom_button.click()
+                    image_Controls.zoom_button.click()
+                    image_Controls.zoom_button.click()
+                    image_Controls.zoom_button.click()
                 if(state[2].strip()=="5X"):
-                    zoomDisplay.zoom_button.click()
-                    zoomDisplay.zoom_button.click()
-                    zoomDisplay.zoom_button.click()
-                    zoomDisplay.zoom_button.click()
+                    image_Controls.zoom_button.click()
+                    image_Controls.zoom_button.click()
+                    image_Controls.zoom_button.click()
+                    image_Controls.zoom_button.click()
                 repeat_circum.input_field1.setText(str(state[3].strip()))
                 repeat_circum.gr_tc_input.setText(str(state[4].strip()))
                 if(state[5].strip()=="1"):

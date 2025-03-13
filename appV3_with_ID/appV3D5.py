@@ -94,7 +94,7 @@ def ensure_four_digits(input_string):
 class Shutdown_by_pin(QThread):
     def run(self):
         while True:
-            if input_17.value == 0:
+            if input_17.value == 1:
                 shutdown_pi()
                 time.sleep(0.1)
                
@@ -163,7 +163,8 @@ def save_state():
             repeat_circum.input_field1.text(),
             # repeat_circum.input_field2.text(),
             repeat_circum.gr_tc_input.text(),
-            radio_state
+            radio_state,
+            str(Image_Controls.brightness2.value())
             # navigate_Buttons.txt_total_right_increment.text()
         ]
         if(state[3]==""):
@@ -172,7 +173,9 @@ def save_state():
             state[4]=="0"
         if(state[5]==""):
             state[5]=="0"
-
+        if(state[6]==""):
+            state[6]=="0"
+        
         # if(state[5]==None):
         #     state[5]=="0"
         # if(state[6]==None):
@@ -248,6 +251,7 @@ def load_state():
                     repeat_circum.radio_rl.click()
                 else:
                     repeat_circum.radio_lr.click()
+                Image_Controls.setValue_brightness(int(state[6].strip())) if not state[6].strip() == "0" else None
 
                 # if(len(state)==5):
                 #     state.append("0")
@@ -261,7 +265,9 @@ def load_state():
         a1=a
         b=str(ensure_four_digits(repeat_circum.gr_tc_input.text()))
         b1=b
-        formatted_message = f"U\r\n{a1}{b1}00000000\r\n"
+        c=str(ensure_four_digits(str(image_Controls.brightness2.value())))
+        c1=c
+        formatted_message = f"U\r\n{a1}{b1}00000000{c1}\r\n"
         ser = serial.Serial(
             port='/dev/ttyS0', 
             baudrate=1200,
@@ -347,6 +353,40 @@ class controlSlider(QWidget):
 
     def value(self):
         return self.box.value()
+
+class controlSlider_2(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.layout = QHBoxLayout()
+        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.setLayout(self.layout)
+
+        self.slider = QSlider(Qt.Horizontal)
+        self.slider.setRange(1, 100)  # Set range 1 - 100
+        self.slider.setSingleStep(1)  # Move in steps of 1
+        self.slider.setValue(50)  # Default value
+
+        self.box = QSpinBox()  # Use integer-based spin box
+        self.box.setRange(1, 100)  # Set same range as slider
+        self.box.setSingleStep(1)
+        self.box.setValue(50)  # Default value
+
+        self.valueChanged = self.box.valueChanged
+        self.valueChanged.connect(self.syncSlider)
+        self.slider.valueChanged.connect(self.syncBox)
+
+        self.layout.addWidget(self.box)
+        self.layout.addWidget(self.slider)
+
+    def syncSlider(self):
+        self.slider.setValue(self.box.value())
+
+    def syncBox(self):
+        self.box.setValue(self.slider.value())
+
+    def value(self):
+        return self.box.value()
+
     
 class logControlSlider(QWidget):
     def __init__(self):
@@ -443,7 +483,9 @@ def shutdown_pi():
         a1=a
         b=str(ensure_four_digits(repeat_circum.gr_tc_input.text()))
         b1=b
-        formatted_message = f"U\r\n{a1}{b1}00010001\r\n"
+        c=str(ensure_four_digits(str(image_Controls.brightness2.value())))
+        c1=c
+        formatted_message = f"U\r\n{a1}{b1}00010001{c1}\r\n"
         ser = serial.Serial(
             port='/dev/ttyS0', 
             baudrate=1200,
@@ -557,7 +599,8 @@ class Navigate_Buttons(QWidget):
         a1 = a
         b = str(ensure_four_digits(repeat_circum.gr_tc_input.text()))
         b1 = b
-        formatted_message = f"U\r\n{a1}{b1}00010000\r\n"
+        c=str(ensure_four_digits(str(image_Controls.brightness2.value())))
+        formatted_message = f"U\r\n{a1}{b1}00010000{c}\r\n"
         ser = serial.Serial(
             port='/dev/ttyS0',
             baudrate=1200,
@@ -580,7 +623,8 @@ class Navigate_Buttons(QWidget):
         a1 = a
         b = str(ensure_four_digits(repeat_circum.gr_tc_input.text()))
         b1 = b
-        formatted_message = f"U\r\n{a1}{b1}00020000\r\n"
+        c=str(ensure_four_digits(str(image_Controls.brightness2.value())))
+        formatted_message = f"U\r\n{a1}{b1}00020000{c}\r\n"
         ser = serial.Serial(
             port='/dev/ttyS0',
             baudrate=1200,
@@ -1123,10 +1167,11 @@ class Image_Controls(QWidget):
         self.sharpness = logControlSlider()
         self.sharpness.valueChanged.connect(self.img_update)
         self.sharpness.setSingleStep(0.1)
+        self.brightness2 = controlSlider_2()
         self.brightness = controlSlider()
+        self.brightness.valueChanged.connect(self.img_update)   
         self.brightness.setSingleStep(0.1)
-        self.brightness.valueChanged.connect(self.img_update)
-        self.brightness.valueChanged.connect(self.send_signal)   
+        self.brightness2.valueChanged.connect(self.send_signal)   
         self.reset_button = QPushButton("DEFAULT")
         self.reset_button.setFont(font)
         self.reset_button.setFixedHeight(30)
@@ -1149,7 +1194,7 @@ class Image_Controls(QWidget):
         sharpness_label.setFont(font)
         brightness_label = QLabel("BRIGHTNESS")
         brightness_label.setFont(font)
-        self.layout.addRow(brightness_label, self.brightness)
+        self.layout.addRow(brightness_label, self.brightness2)
         self.layout.setContentsMargins(0, 0, 0, 0)
 
     def toggle_function_h(self):
@@ -1193,7 +1238,7 @@ class Image_Controls(QWidget):
             self.zoom_level = 1.0
             self.setZoom()
             self.zoom_button.setText("ZOOM")
-
+    
     def on_hflip_clicked(self):
         global hflip
         hflip = 1
@@ -1304,7 +1349,9 @@ class Image_Controls(QWidget):
         a1=a
         b=str(ensure_four_digits(repeat_circum.gr_tc_input.text()))
         b1=b
-        formatted_message = f"U\r\n{a1}{b1}000000000100\r\n"
+        c=str(ensure_four_digits(str(self.brightness2.value())))
+        c1=c    
+        formatted_message = f"U\r\n{a1}{b1}000000000100{c1}\r\n"
         ser = serial.Serial(
             port='/dev/ttyS0', 
             baudrate=1200,
@@ -1369,7 +1416,7 @@ def turn_off_wifi_bluetooth():
     subprocess.run("sudo hciconfig hci0 down", shell=True, capture_output=True, text=True)
 
 if __name__ == '__main__':
-    window.setWindowFlags(Qt.FramelessWindowHint)
+    # window.setWindowFlags(Qt.FramelessWindowHint)
     window.showMaximized()
     # serial_thread = SerialThread()
     # serial_thread_home = SerialThread_Home()

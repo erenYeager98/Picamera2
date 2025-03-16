@@ -94,7 +94,7 @@ def ensure_four_digits(input_string):
 class Shutdown_by_pin(QThread):
     def run(self):
         while True:
-            if input_17.value == 1:
+            if input_17.value == 0:
                 shutdown_pi()
                 time.sleep(0.1)
                
@@ -164,7 +164,7 @@ def save_state():
             # repeat_circum.input_field2.text(),
             repeat_circum.gr_tc_input.text(),
             radio_state,
-            str(Image_Controls.brightness2.value())
+            str(image_Controls.brightness2.value())
             # navigate_Buttons.txt_total_right_increment.text()
         ]
         if(state[3]==""):
@@ -251,7 +251,7 @@ def load_state():
                     repeat_circum.radio_rl.click()
                 else:
                     repeat_circum.radio_lr.click()
-                Image_Controls.setValue_brightness(int(state[6].strip())) if not state[6].strip() == "0" else None
+                image_Controls.setValue_brightness(int(state[6].strip())) if not state[6].strip() == "0" else None
 
                 # if(len(state)==5):
                 #     state.append("0")
@@ -386,6 +386,10 @@ class controlSlider_2(QWidget):
 
     def value(self):
         return self.box.value()
+    def setValue(self, val):
+        self.box.setValue(val)
+    def setValueSlider(self,val):
+        self.slider.setValue(val)
 
     
 class logControlSlider(QWidget):
@@ -1364,8 +1368,11 @@ class Image_Controls(QWidget):
             ser.open()
         ser.write(formatted_message.encode())
         ser.close()
+    
+    def setValue_brightness(self, value):
+        self.brightness2.setValueSlider(value)
 
-# Initialize the Main window with the defined widgets.
+    # Initialize the Main window with the defined widgets.
 try:
     picam2 = Picamera2()
 except Exception:
@@ -1416,7 +1423,7 @@ def turn_off_wifi_bluetooth():
     subprocess.run("sudo hciconfig hci0 down", shell=True, capture_output=True, text=True)
 
 if __name__ == '__main__':
-    # window.setWindowFlags(Qt.FramelessWindowHint)
+    window.setWindowFlags(Qt.FramelessWindowHint)
     window.showMaximized()
     # serial_thread = SerialThread()
     # serial_thread_home = SerialThread_Home()

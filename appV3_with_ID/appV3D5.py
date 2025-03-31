@@ -1175,7 +1175,11 @@ class Image_Controls(QWidget):
         self.brightness = controlSlider()
         self.brightness.valueChanged.connect(self.img_update)   
         self.brightness.setSingleStep(0.1)
-        self.brightness2.valueChanged.connect(self.send_signal)   
+        # self.brightness2.valueChanged.connect(self.send_signal)   
+        # self.brightness.sliderReleased.connect(self.send_signal)
+        self.brightness2.slider.sliderReleased.connect(self.send_signal)
+
+
         self.reset_button = QPushButton("DEFAULT")
         self.reset_button.setFont(font)
         self.reset_button.setFixedHeight(30)
@@ -1367,6 +1371,7 @@ class Image_Controls(QWidget):
         if not ser.is_open:
             ser.open()
         ser.write(formatted_message.encode())
+        print("sent message:", formatted_message)
         ser.close()
     
     def setValue_brightness(self, value):

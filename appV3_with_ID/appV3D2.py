@@ -81,7 +81,7 @@ def ensure_four_digits(input_string):
 class Shutdown_by_pin(QThread):
     def run(self):
         while True:
-            if input_17.value == 0:
+            if input_17.value == 1:
                 shutdown_pi()
                 time.sleep(0.1)
                
@@ -1378,7 +1378,7 @@ def turn_off_wifi_bluetooth():
     subprocess.run("sudo hciconfig hci0 down", shell=True, capture_output=True, text=True)
 
 if __name__ == '__main__':
-    window.setWindowFlags(Qt.FramelessWindowHint)
+    # window.setWindowFlags(Qt.FramelessWindowHint)
     window.showMaximized()
     # serial_thread = SerialThread()
     # serial_thread_home = SerialThread_Home()

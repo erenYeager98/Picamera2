@@ -97,7 +97,7 @@ def ensure_four_digits(input_string):
 class Shutdown_by_pin(QThread):
     def run(self):
         while True:
-            if input_17.value == 1:
+            if input_17.value == 0:
                 shutdown_pi()
                 time.sleep(0.1)
 

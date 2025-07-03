@@ -36,7 +36,7 @@
 import subprocess
 import os
 import sys
-import re
+
 import numpy as np
 from gpiozero import PWMOutputDevice, DigitalOutputDevice,InputDevice
 from time import sleep
@@ -47,7 +47,6 @@ from PyQt5.QtCore import Qt, pyqtSignal,QThread,QProcess,QEvent,QCoreApplication
 from PyQt5.QtGui import QIntValidator, QPixmap,QFont
 import libcamera
 from picamera2 import Picamera2
-from pathlib import Path
 from picamera2.previews.qt import QPicamera2
 from PyQt5.QtWidgets import (QApplication, QCheckBox, QComboBox, QDesktopWidget,
                              QDoubleSpinBox, QFormLayout, QHBoxLayout, QLabel,
@@ -98,14 +97,6 @@ class Shutdown_by_pin(QThread):
             if input_17.value == 0:
                 shutdown_pi()
                 time.sleep(0.1)
-
-    try:
-        log_file_path="buffer"
-        if os.path.exists(log_file_path):
-            os.remove(log_file_path)
-            print(f"[INFO] Deleted buffer file: {log_file_path}")
-    except Exception as e:
-        print(f"[ERROR] Failed to delete buffer: {e}")
                
 
 #class SerialThread_Home(QThread):
@@ -141,86 +132,6 @@ class Shutdown_by_pin(QThread):
         
 #        if(input_device.value==0):
 #            self.btn_right.setText("→")
-
-class SerialListener(QThread):
-    new_data = pyqtSignal(str)  # Signal to update GUI
-
-    def __init__(self, port=SERIAL_PORT, baudrate=9600):
-        super().__init__()
-        self.port = port
-        self.baudrate = baudrate
-        self.stack = []
-        self.running = True
-        self.log_file_path = "buffer"
-
-        # Load previous values from file into stack
-        self.restore_stack_from_buffer()
-        print("[DEBUG] SerialListener object created")
-
-
-    def restore_stack_from_buffer(self):
-        try:
-            with open(self.log_file_path, "r", encoding='utf-8') as f:
-                content = f.read()
-                self.stack = re.findall(r'\{(.*?)\}', content)
-                print(f"[INFO] Restored {len(self.stack)} items from buffer")
-        except FileNotFoundError:
-            print("[INFO] No previous buffer file found. Starting fresh.")
-            self.stack = []
-
-    def run(self):
-        try:
-            ser = serial.Serial(self.port, self.baudrate, timeout=0.1)
-            print("[INFO] Serial listener started.")
-            buffer = ""
-
-            with open(self.log_file_path, "a", encoding='utf-8') as log_file:
-                while self.running:
-                    if ser.in_waiting:
-                        data = ser.read(ser.in_waiting).decode(errors='ignore')
-                        print(f"[DEBUG] Bytes waiting: {ser.in_waiting}")
-                        buffer += data
-
-                        # Log all raw data
-                        log_file.write(data)
-                        log_file.flush()
-                        print(f"[DEBUG] Raw data: {repr(data)}")
-
-                        # Handle "\r\r" to show last stored value
-                        if "\r\r" in buffer:
-                            print(f"[DEBUG] Current buffer: {repr(buffer)}")
-                            buffer = buffer.replace("\r\r", "")
-                            if self.stack:
-                                last_value = self.stack[-1]
-                                self.new_data.emit(f"{last_value}")
-                                print(f"[INFO] Last stored value: {last_value}")
-                                log_file.write(f"[READ STACK TOP] {last_value}\n")
-                            else:
-                                # self.new_data.emit("Stack is empty")
-                                log_file.write("[STACK EMPTY]\n")
-
-                        # Handle valid message: \r\n{value}\r\n
-                        matches = re.findall(r'\r\n(\d+)\r\n', buffer)
-                        for match in matches:
-                            self.stack.append(match)
-                            # self.new_data.emit(f"Received and stored: {match}")
-                            print(f"[INFO] Stored: {match}")
-                            log_file.write(f"[STORED] {match}\n")
-                            log_file.flush()
-                            buffer = buffer.replace(f"\r\n{match}\r\n", "")
-
-
-                    time.sleep(0.05)
-
-        except serial.SerialException as e:
-            # self.new_data.emit(f"[ERROR] Serial error: {e}")
-            with open(self.log_file_path, "a", encoding='utf-8') as log_file:
-                log_file.write(f"[ERROR] {e}\n")
-
-    def stop(self):
-        self.running = False
-        self.wait()
-        print("[INFO] Serial listener stopped.")
 
 class SavingThread(QThread):
     finished2 = pyqtSignal()
@@ -316,7 +227,6 @@ def load_state():
             with open(filePath, 'r') as file:
                 
                 state = file.readlines()
-                print(state)
                 if(state[0].strip()=="1"):
                     image_Controls.hflip_btn.click()
                 if(state[1].strip()=="1"):
@@ -1041,8 +951,6 @@ class Repeat_Circum(QWidget):
         layout = QFormLayout()
         font = QFont()
         font.setPointSize(12)
-        self.state_file = "/home/camera1/resources/widget_state.txt"
-        self.max_temp = self._load_max()
         # Repeat Row
         self.label1 = QLabel("REPEAT:")
         self.label1.setFont(font)
@@ -1056,17 +964,7 @@ class Repeat_Circum(QWidget):
         self.checkbox.setFont(font)
         self.checkbox.stateChanged.connect(self.toggle_password_row)
         self.checkbox.stateChanged.connect(self.change_logo)
-        self.current_label = QLabel("Temp Now: --°C");    
-        self.current_label.setFont(font)
-        self.max_label     = QLabel(f"Max Temp: {self.max_temp:.2f}°C"); 
-        self.max_label.setFont(font)
-        
         layout.addRow(self.checkbox)
-
-        self.timer = QTimer()
-        self.timer.timeout.connect(self._update)
-        self.timer.start(1000)
-
 
         # Direction Label and Radio Buttons
         self.direction_label = QLabel("DIRECTION:")
@@ -1107,8 +1005,7 @@ class Repeat_Circum(QWidget):
         layout.addRow(self.label1, self.input_field1)
         self.label1.hide()
         self.input_field1.hide()
-        self.current_label.hide()
-        self.max_label.hide()
+
         # GR TC Row (Initially Hidden)
         self.gr_tc_label = QLabel("GR TC:")
         self.gr_tc_label.setFont(font)
@@ -1118,9 +1015,7 @@ class Repeat_Circum(QWidget):
         
         # Initializing components
         layout.addRow(self.gr_tc_label, self.gr_tc_input)
-        layout.addWidget(self.current_label)
-        layout.addWidget(self.max_label)
-        layout.addRow(direction_layout)
+        layout.addRow(direction_layout)  
         
         self.label = QLabel(self)
 
@@ -1139,63 +1034,6 @@ class Repeat_Circum(QWidget):
         self.setWindowTitle('QFormLayout Example')
         self.setGeometry(300, 300, 300, 200)
         layout.setContentsMargins(0, 0, 0, 0)
-        self._update()
-
-        
-
-    def read_cpu_temp(self) -> float:
-        """
-        Returns the CPU temperature in °C.
-        Works on all Raspberry Pi models where the kernel exposes
-        /sys/class/thermal/thermal_zone0/temp.
-        """
-        temp_path = Path("/sys/class/thermal/thermal_zone0/temp")
-        if temp_path.exists():
-            # Value is in millidegrees (e.g. 45321 → 45.321 °C)
-            return int(temp_path.read_text().strip()) / 1000.0
-        else:
-            # Fallback for very old images that may lack the file
-            # Requires `vcgencmd` to be installed.
-            import subprocess, shlex
-
-            out = subprocess.check_output(shlex.split("vcgencmd measure_temp"))
-            # vcgencmd outputs: temp=45.3'C
-            return float(out.decode().split("=")[1].split("'")[0])
-
-
-    def _load_max(self):
-        if not os.path.exists(self.state_file):
-            return 0.0
-        lines = open(self.state_file).read().splitlines()
-        if len(lines) >= 8:
-            try:
-                return float(lines[7])
-            except:
-                pass
-        return 0.0
-
-    def _save_max(self):
-        # load existing lines
-        lines = []
-        if os.path.exists(self.state_file):
-            lines = open(self.state_file).read().splitlines()
-        # pad out to 8 lines
-        while len(lines) < 8:
-            lines.append("")
-        # update line 8 (index 7)
-        lines[7] = f"{self.max_temp:.2f}"
-        with open(self.state_file, "w") as f:
-            f.write("\n".join(lines))
-
-    def _update(self):
-        t = self.read_cpu_temp()
-        if t is None:
-            return
-        self.current_label.setText(f"Temp Now: {t:,.2f}°C")
-        if t > self.max_temp:
-            self.max_temp = t
-            self.max_label.setText(f"Max Temp: {t:.2f}°C")
-            self._save_max()
 
     def validate_input_repeat(self):
         try:
@@ -1260,8 +1098,6 @@ class Repeat_Circum(QWidget):
             self.radio_lr.hide()
             self.radio_rl.hide()
             self.password_input.setText("")
-            self.current_label.hide()
-            self.max_label.hide()
             if not self.submit_clicked:
                 self.password_button.setEnabled(True)
 
@@ -1287,8 +1123,6 @@ class Repeat_Circum(QWidget):
             self.direction_label.show()
             self.radio_lr.show()
             self.radio_rl.show()
-            self.current_label.show()
-            self.max_label.show()
             self.submit_clicked = True
         else:
             self.gr_tc_label.hide()
@@ -1298,9 +1132,6 @@ class Repeat_Circum(QWidget):
             self.radio_rl.hide()
             self.label1.hide()
             self.input_field1.hide()
-            self.current_label.hide()
-            self.max_label.hide()
-
 
 class Image_Controls(QWidget):
     def __init__(self):
@@ -1373,17 +1204,6 @@ class Image_Controls(QWidget):
         brightness_label.setFont(font)
         self.layout.addRow(brightness_label, self.brightness2)
         self.layout.setContentsMargins(0, 0, 0, 0)
-
-        self.mvm_label = QLabel("MPM: --")
-        self.mvm_label.setFont(font)
-        self.layout.addRow(self.mvm_label)
-
-        self.serial_thread = SerialListener(port=SERIAL_PORT, baudrate=9600)  # Adjust port as needed
-        self.serial_thread.new_data.connect(self._update_from_serial)
-        self.serial_thread.start()
-
-    def _update_from_serial(self, data):
-        self.mvm_label.setText(f"MPM: {data}")
 
     def toggle_function_h(self):
         if self.hflip_btn.text() == "HORIZONTAL FLIP":
@@ -1612,8 +1432,6 @@ if __name__ == '__main__':
     window.showMaximized()
     # serial_thread = SerialThread()
     # serial_thread_home = SerialThread_Home()
-    serialListener = SerialListener()
-    serialListener.start()
     # serial_thread.start()
     savingThread = SavingThread()
     # savingThread.start()

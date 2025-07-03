@@ -32,6 +32,7 @@
 #Suffix this value in serial data ex., from f"U\r\n{a1}{b1}00000000\r\n" to f"U\r\n{a1}{b1}000000000100\r\n"
 #send this serial data when the slider moves to the new value
 #
+#add temperature indication
 #!/usr/bin/python3
 import subprocess
 import os

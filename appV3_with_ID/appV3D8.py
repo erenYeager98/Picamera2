@@ -75,6 +75,7 @@ b1 = None
 
 input_device = InputDevice(input_pin)
 input_17 = InputDevice(pin_17)
+input_18 = InputDevice(18)
 output_device = DigitalOutputDevice(output_pin)
 stepper_enable = DigitalOutputDevice(stepper_enable_pin)
 input_device_left = InputDevice(input_pin_left)
@@ -92,7 +93,6 @@ def ensure_four_digits(input_string):
         digits = digits.zfill(4)
         
     return digits
-
 
 class Shutdown_by_pin(QThread):
     def run(self):
@@ -1576,12 +1576,14 @@ def turn_off_wifi_bluetooth():
     subprocess.run("sudo hciconfig hci0 down", shell=True, capture_output=True, text=True)
 
 if __name__ == '__main__':
+    subprocess.run("./stream_display.sh", shell=True, capture_output=True, text=True)
+
     window.setWindowFlags(Qt.FramelessWindowHint)
     window.showMaximized()
     # serial_thread = SerialThread()
     # serial_thread_home = SerialThread_Home()
     serialListener = SerialListener()
-    init_node.main()
+    # init_node.main()
     serialListener.start()
     # serial_thread.start()
     savingThread = SavingThread()

@@ -38,7 +38,7 @@ Description=Stream Raspberry Pi A Display to Raspberry Pi B
 After=graphical.target
 
 [Service]
-ExecStart=/home/pi/stream_kiosk/stream_display.sh
+ExecStart=/home/camera2/stream_kiosk/stream_display.sh
 Restart=always
 User=pi
 Environment=DISPLAY=:0

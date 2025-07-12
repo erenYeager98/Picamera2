@@ -110,40 +110,6 @@ class Shutdown_by_pin(QThread):
         print(f"[ERROR] Failed to delete buffer: {e}")
                
 
-#class SerialThread_Home(QThread):
-#    finished1 = pyqtSignal()
-
-#    def run(self):
-#        if input_device_left.value == 0:
-#            if output_device == 0:
-#                output_device.on()
-#            pwm.frequency = 800
-#            pwm.value = 0.5
-            
-#            total_sleep_time = 12
-#            check_interval = 0.05  # Check every 0.05 seconds
-#            elapsed_time = 0
-            
-#            while elapsed_time < total_sleep_time:
-#                sleep(check_interval)
-#                elapsed_time += check_interval
-#                
-#                if input_device_left.value == 1:
-#                    pwm.value = 0
-#                    #navigate_Buttons.set_text()
-#                    #self.btn_left.setText("E")
-#                    break
-#            else:
-#                pwm.value = 0
-#        else:
-#            output_device.off()
-#            pwm.value = 0
-#            #navigate_Buttons.set_text()            
-#            #self.finished1.emit()
-        
-#        if(input_device.value==0):
-#            self.btn_right.setText("→")
-
 class SerialListener(QThread):
     new_data = pyqtSignal(str)  # Signal to update GUI
 
@@ -1610,7 +1576,7 @@ def turn_off_wifi_bluetooth():
     subprocess.run("sudo hciconfig hci0 down", shell=True, capture_output=True, text=True)
 
 if __name__ == '__main__':
-    # window.setWindowFlags(Qt.FramelessWindowHint)
+    window.setWindowFlags(Qt.FramelessWindowHint)
     window.showMaximized()
     # serial_thread = SerialThread()
     # serial_thread_home = SerialThread_Home()

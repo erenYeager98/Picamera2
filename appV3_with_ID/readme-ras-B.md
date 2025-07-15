@@ -8,9 +8,6 @@ nano ~/stream_kiosk/view_stream.sh
 ```
 #!/bin/bash
 
-# Hide the mouse cursor
-unclutter -idle 0.5 &
-
 # View the incoming stream in fullscreen, borderless
 while true; do
     ffplay -fflags nobuffer -flags low_delay -framedrop \

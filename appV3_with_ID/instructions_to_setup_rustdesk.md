@@ -33,8 +33,9 @@ python auto_fullscreen.py
 
 File to copy:
 
-auto_fullscreen.py
-button.png
+[auto_fullscreen.py](https://github.com/erenYeager98/Picamera2/blob/main/appV3_with_ID/auto_fullscreen.py)
+
+[button.png](https://github.com/erenYeager98/Picamera2/blob/main/appV3_with_ID/button.png)
 
 copy these files and paste in /home/pi/
 

@@ -1,9 +1,11 @@
-## Set a permanent password on Ras A upon running it once.
+# Setup on Raspberry pi A
+
+## 1. Set a permanent password on Ras A upon running it once.
 ```
 rustdesk --password 123456
 ```
 
-## Open this file
+## 2. Open this file
 
 ``` 
 sudo nano /boot/config.txt
@@ -13,16 +15,36 @@ sudo nano /boot/config.txt
 hdmi_force_hotplug=1
 ```
 
-## Connect using Ras B
+# Setup on Raspberry pi B
+
+## 1. Paste these content in ~/.bash_profile
+```
+sudo X :0 &
+export DISPLAY=:0
+openbox-session &
+rustdesk --connect (User ID) (permanent password) &
+sleep 10
+python auto_fullscreen.py
+```
+
+
+
+## 2. Copy files
+
+File to copy:
+
+auto_fullscreen.py
+button.png
+
+copy these files and paste in /home/pi/
+
+## 3. Install dependencies
 
 ```
-rustdesk --connect (User ID) ( permanent password ) --log-level debug
+sudo apt update
+sudo apt install -y libjpeg-dev zlib1g-dev libfreetype6-dev libopenjp2-7-dev libtiff5-dev tk-dev python3-tk
+sudo apt install -y python3-opencv libopencv-dev
+sudo apt install pyautogui
 ```
 
-## If you are using openbox
-
-```
-mkdir -p ~/.config/openbox
-nano ~/.config/openbox/autostart
-```
-
+## 4. Reboot Rasbperry B

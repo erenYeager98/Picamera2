@@ -14,6 +14,30 @@ sudo nano /boot/config.txt
 ```
 hdmi_force_hotplug=1
 ```
+## 3. Open this file
+```
+mkdir -p .config/lxsession/LXDE-pi/
+sudo nano .config/lxsession/LXDE-pi/autostart
+```
+### Add these lines
+```
+@/usr/bin/python3 /home/camera2/appV3D9.py
+```
+
+## 4. Open this file
+```
+sudo nano /etc/xdg/lxsession/LXDE-pi/autostart
+```
+### Comment these lines or paste this exact content
+```
+#@lxpanel --profile LXDE-pi
+#@pcmanfm --desktop --profile LXDE-pi
+@xscreensaver -no-splash
+```
+
+## Restart Pi A and verify application autoboot.
+
+
 
 # Setup on Raspberry pi B
 
